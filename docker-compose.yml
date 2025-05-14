@@ -1,0 +1,37 @@
+services:
+#  user-service:
+#    build: ./user-service
+#    ports:
+#      - "8081:8081"
+#    environment:
+#      SPRING_DATASOURCE_URL: jdbc:mysql://mysql_container:3306/userdb
+#      SPRING_DATASOURCE_USERNAME: userdb
+#      SPRING_DATASOURCE_PASSWORD: userdb
+#    depends_on:
+#      - mysql
+#    networks:
+#      - mynetwork
+#
+#  redis:
+#    image: redis:latest
+#    container_name: redis-cache
+#    ports:
+#      - "6379:6379"
+
+  mysql:
+    image: mysql:8.0
+    container_name: mysql_container
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpassword
+      MYSQL_DATABASE: userdb
+      MYSQL_USER: userdb
+      MYSQL_PASSWORD: userdb
+    ports:
+      - "3306:3306"
+    networks:
+      - mynetwork
+
+networks:
+  mynetwork:
+    driver: bridge

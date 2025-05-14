@@ -1,11 +1,15 @@
 server:
   port: 8761
 
+spring:
+  application:
+    name: discovery-server  # Đặt tên cho Eureka Server
+
 eureka:
   instance:
     hostname: localhost
   client:
-    register-with-eureka: false
-    fetch-registry: false
+    register-with-eureka: false  # Vì đây là server, không cần tự đăng ký vào chính nó
+    fetch-registry: false        # Không cần lấy danh sách service vì nó là server
     serviceUrl:
-      defaultZone: http://${eureka.instance.hostname}:${server.port}/eureka/
+      defaultZone: http://localhost:8761/eureka/

@@ -2,19 +2,51 @@ server:
   port: 8080
 
 spring:
+  application:
+    name: api-gateway  # Đặt tên để đăng ký với Eureka
   cloud:
     gateway:
+      discovery:
+        locator:
+          enabled: true
+          lower-case-service-id: true
       routes:
+        - id: user-auth
+          uri: lb://user-service # Địa chỉ dịch vụ người dùng
+          predicates:
+            - Path=/api/auth/**
+          filters:
+            - name: JwtFilter
+              args: { }
+
         - id: user-service
-          uri: http://localhost:8081/
+          uri: lb://user-service
           predicates:
-              - Path=/api/user/**
+            - Path=/api/user/**
+          filters:
+            - name: JwtFilter
+              args: { }
+
+      # Health Data Service
         - id: health-data-service
-          uri: http://localhost:8082/
+          uri: lb://health-data-service
           predicates:
-              - Path=/api/health-data/**
+             - Path=/api/health-data/**
+          filters:
+              - name: JwtFilter
+
+jwt:
+  secret: U29tZVZlcnlTZWN1cmVLZXlUaGF0SXNHZW5lcmF0ZWRTdHJvbmdMb3JtYXQcmVLZXlUaGF0SXNHZW5lcmF0=
 
 eureka:
   client:
     service-url:
-        defaultZone: http://localhost:8761/eureka/
+      defaultZone: http://localhost:8761/eureka/
+    register-with-eureka: true
+    fetch-registry: true
+  instance:
+    prefer-ip-address: true
+
+logging:
+  level:
+    org.springframework.cloud.gateway: DEBUG
