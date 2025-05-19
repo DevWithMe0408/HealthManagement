@@ -7,4 +7,6 @@ import org.springframework.stereotype.Repository;
 @Repository
 public interface UnitRepository extends JpaRepository<Unit, Long> {
     boolean existsByCode(String code);
+
+    Unit findById(long id);
 }

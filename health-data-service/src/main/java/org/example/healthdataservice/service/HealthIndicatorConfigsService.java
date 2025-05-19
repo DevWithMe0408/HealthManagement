@@ -10,4 +10,7 @@ public interface HealthIndicatorConfigsService {
     List<HealthIndicatorConfigs> getAll();
     Optional<HealthIndicatorConfigs> getByType(IndicatorType indicatorType);
     HealthIndicatorConfigs save(HealthIndicatorConfigs configs);
+
+    // Phương thức mới để tạo configs mặc định
+    void createDefaultHealthIndicatorConfigsForUser(Long userId);
 }

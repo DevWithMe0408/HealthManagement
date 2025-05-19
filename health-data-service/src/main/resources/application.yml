@@ -24,18 +24,19 @@ spring:
     port: 5672
     username: guest
     password: guest
-  app:
-    rabbitmq:
-      exchange:
-        user-events: user.events.exchange
-      queue:
-        health-data-user-created: health-data.user-created.queue
-      routing-key:
-        user-created: user.event.created
   data:
     redis:
       host: localhost
       port: 6379
+
+app:
+  rabbitmq:
+    exchange:
+      user-events: user.events.exchange
+    queue:
+      health-data-user-created: health-data.user-created.queue
+    routing-key:
+      user-created: user.event.created
 
 eureka:
   client:

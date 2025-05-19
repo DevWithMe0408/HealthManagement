@@ -1,6 +1,7 @@
 package org.example.userservice.service;
 
 import lombok.RequiredArgsConstructor;
+import org.example.events.UserCreatedEvent;
 import org.example.userservice.dto.request.LoginRequest;
 import org.example.userservice.dto.request.RegisterRequest;
 import org.example.userservice.dto.response.TokenRefreshResponse;
@@ -14,7 +15,9 @@ import org.example.userservice.repository.AuthRepository;
 import org.example.userservice.security.JwtUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -49,6 +52,15 @@ public class AuthServiceImpl implements AuthService {
     private JwtUtil jwtUtil;
     @Autowired
     private RefreshTokenService refreshTokenService;
+
+    @Autowired
+    private RabbitTemplate rabbitTemplate;
+
+    @Value("${app.rabbitmq.exchange.user-events}")
+    private String userEventsExchangeName;
+
+    @Value("${app.rabbitmq.routing-key.user-created}")
+    private String userCreateRoutingKey;
 
     /**
      * Check if a user exists by username
@@ -109,6 +121,33 @@ public class AuthServiceImpl implements AuthService {
         // và User là owning side (có auth_id) thì bước này có thể không cần thiết sau khi user đã lưu.
         saveAuth.setUser(saveUser);
         authRepository.save(saveAuth);
+
+        // --- BẮT ĐẦU PHẦN GỬI MESSAGE RABBITMQ ---
+        // 4. Tạo Event DTO (sử dụng DTO từ module common-events bạn đã tạo)
+        UserCreatedEvent event = new UserCreatedEvent(
+                saveUser.getId().toString(),
+                saveAuth.getUsername(),
+                saveAuth.getEmail()
+        );
+        // 5. Gửi event tới RabbitMQ
+        try {
+            log.info("Sending UserCreatedEvent for userId: {}, username: {}",event.getUserId(),event.getUsername());
+            rabbitTemplate.convertAndSend(userEventsExchangeName,userCreateRoutingKey,event);
+            log.info("UserCreatedEvent sent successfully to exchange '{}' with routing key '{}'", userEventsExchangeName, userCreateRoutingKey);
+        } catch (Exception e) {
+            // Xử lý lỗi gửi message:
+            // - Log lỗi nghiêm trọng.
+            // - Cân nhắc:
+            //    - Không làm gì cả (eventual consistency, có thể có job retry sau này hoặc giám sát).
+            //    - Ném một exception tùy chỉnh nếu việc gửi event là cực kỳ quan trọng và bạn muốn transaction rollback.
+            //      Tuy nhiên, điều này sẽ làm User Service phụ thuộc vào sự sẵn sàng của RabbitMQ.
+            //      Thường thì không nên để việc tạo user thất bại chỉ vì không gửi được event.
+            //    - Ghi lại event vào một "outbox table" trong DB để một tiến trình khác xử lý gửi (Transactional Outbox Pattern).
+            log.error("Failed to send UserCreatedEvent for userId: {}. Error: {}", event.getUserId(), e.getMessage(), e);
+            // Ví dụ: throw new EventPublishingException("Failed to publish UserCreatedEvent", e);
+            // Nếu bạn ném exception ở đây, @Transactional sẽ rollback toàn bộ.
+        }
+        log.info("User {} registered successfully. Auth ID: {}, User ID: {}", saveAuth.getUsername(), saveAuth.getId(), saveUser.getId());
 
     }
     @Override

@@ -19,4 +19,6 @@ public interface HealthIndicatorConfigsRepository extends JpaRepository<HealthIn
 
     Optional<HealthIndicatorConfigs> getByIndicatorType(IndicatorType indicatorType);
 
+    boolean existsByUserId(Long userId);
+
 }
