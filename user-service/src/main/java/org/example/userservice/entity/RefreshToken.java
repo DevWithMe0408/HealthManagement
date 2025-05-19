@@ -13,7 +13,7 @@ public class RefreshToken {
     private Long id;
 
     @OneToOne
-    @JoinColumn(name ="auth_id", referencedColumnName = "id")
+    @JoinColumn(name ="auth_id", referencedColumnName = "id", nullable = false, unique = true)
     private Auth auth;
 
     @Column(nullable = false, unique = true)

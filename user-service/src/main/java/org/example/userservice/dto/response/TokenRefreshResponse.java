@@ -1,4 +1,4 @@
-package org.example.userservice.service.dto.response;
+package org.example.userservice.dto.response;
 
 import lombok.Data;
 

@@ -53,38 +53,4 @@ public class JwtUtil {
                 .signWith(getSigningKey(), SignatureAlgorithm.HS512)
                 .compact();
 }
-    // Lay username tu Jwt token
-    public String getUsernameFromToken(String token) {
-        Claims claims = Jwts.parserBuilder()
-                .setSigningKey(getSigningKey())
-                .build()
-                .parseClaimsJws(token)
-                .getBody();
-        return claims.getSubject();
-    }
-    // Kiem tra token co hop le khong
-    public boolean validateToken(String token) {
-        try {
-            Jwts.parserBuilder()
-                    .setSigningKey(getSigningKey())
-                    .build()
-                    .parseClaimsJws(token);
-            return true;
-        } catch (SecurityException ex) {
-            // Invalid JWT signature
-            return false;
-        } catch (MalformedJwtException ex) {
-            // Invalid JWT token
-            return false;
-        } catch (ExpiredJwtException ex) {
-            // Expired JWT token
-            return false;
-        } catch (UnsupportedJwtException ex) {
-            // Unsupported JWT token
-            return false;
-        } catch (IllegalArgumentException ex) {
-            // JWT claims string is empty
-            return false;
-        }
-    }
     }

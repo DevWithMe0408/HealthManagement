@@ -1,4 +1,4 @@
-package org.example.userservice.service.dto.request;
+package org.example.userservice.dto.request;
 
 import lombok.Data;
 

@@ -26,7 +26,7 @@ public class HealthMetricsServiceImpl implements HealthMetricsService {
 
     @Override
     public HealthMetrics createHealthMetrics(double value, IndicatorType indicatorType, Measurement measurement) {
-        HealthIndicatorConfigs config = configsRepository.getByType(indicatorType)
+        HealthIndicatorConfigs config = configsRepository.getByIndicatorType(indicatorType)
                 .orElseThrow(() -> new RuntimeException("Indicator config not found" + indicatorType));
         HealthMetrics healthMetrics = new HealthMetrics();
         healthMetrics.setValue(value);

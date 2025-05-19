@@ -19,10 +19,10 @@
         <module>api-gateway</module>
         <module>user-service</module>
         <module>health-data-service</module>
-        <module>config-server</module>
         <module>discovery-server</module>
         <module>nutrition-service</module>
         <module>notification-service</module>
+        <module>common-events</module>
     </modules>
 
     <properties>
@@ -30,12 +30,24 @@
         <spring-cloud.version>2023.0.0</spring-cloud.version>
         <lombok.version>1.18.30</lombok.version>
         <mysql.version>8.0.33</mysql.version>
-        <jjwt.version>0.11.5</jjwt.version>
+        <jjwt.version>0.12.5</jjwt.version>
         <slf4j.version>2.0.9</slf4j.version>
     </properties>
 
     <dependencyManagement>
         <dependencies>
+            <!-- ... các dependency khác ... -->
+            <dependency>
+                <groupId>${project.groupId}</groupId> <!-- Hoặc org.example -->
+                <artifactId>common-events</artifactId>
+                <version>${project.version}</version> <!-- Hoặc 0.0.1-SNAPSHOT -->
+            </dependency>
+            <dependency>
+                <groupId>${project.groupId}</groupId>
+                <artifactId>user-service</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <!-- ... các module service khác ... -->
             <!-- Import Spring Cloud dependencies -->
             <dependency>
                 <groupId>org.springframework.cloud</groupId>
@@ -59,11 +71,6 @@
             </dependency>
 
             <!-- JWT Authentication -->
-            <dependency>
-                <groupId>io.jsonwebtoken</groupId>
-                <artifactId>jjwt</artifactId>
-                <version>${jjwt.version}</version>
-            </dependency>
             <dependency>
                 <groupId>io.jsonwebtoken</groupId>
                 <artifactId>jjwt-api</artifactId>

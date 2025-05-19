@@ -1,6 +1,7 @@
 package org.example.apigateway.security;
 
 import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.Jws;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
 import org.slf4j.Logger;
@@ -22,7 +23,7 @@ public class JwtFilter extends AbstractGatewayFilterFactory<JwtFilter.Config> {
     private static final Logger logger = LoggerFactory.getLogger(JwtFilter.class);
 
     @Value("${jwt.secret}")
-    private String secretKey;
+    private String secretKeyString;
 
     public JwtFilter() {
         super(Config.class);
@@ -49,15 +50,22 @@ public class JwtFilter extends AbstractGatewayFilterFactory<JwtFilter.Config> {
             String token = authHeader.substring(7);
             try {
                 // Create SecretKey from the secret string
-                byte[] keyBytes = secretKey.getBytes(StandardCharsets.UTF_8);
+                byte[] keyBytes = secretKeyString.getBytes(StandardCharsets.UTF_8);
                 SecretKey key = Keys.hmacShaKeyFor(keyBytes); // từ thư viện jjwt
 
-
-                Claims claims = Jwts.parserBuilder()
-                        .setSigningKey(key)
+                // **THAY ĐỔI CÁCH PARSE TOKEN CHO JJWT 0.12.x**
+                Jws<Claims> jwsClaims = Jwts.parser()// Sử dụng Jwts.parser() trực tiếp
+                        .verifyWith(key)  // Chỉ định key để verify chữ ký
                         .build()
-                        .parseClaimsJws(token)
-                        .getBody();
+                        .parseSignedClaims(token);// Parse token đã ký (JWS)
+                Claims claims = jwsClaims.getPayload();
+
+
+//                Claims claims = Jwts.parserBuilder()
+//                        .setSigningKey(key)
+//                        .build()
+//                        .parseClaimsJws(token)
+//                        .getBody();
 
                 logger.debug("Successfully validated token for user: {}", claims.getSubject());
 
@@ -69,9 +77,15 @@ public class JwtFilter extends AbstractGatewayFilterFactory<JwtFilter.Config> {
                                 .header("userRoles", claims.get("roles", String.class))
                                 .build())
                         .build());
-            } catch (Exception e) {
-                logger.error("Token validation failed for path: {}", path, e);
+            } catch (io.jsonwebtoken.ExpiredJwtException e) { // Bắt cụ thể từng loại exception
+                logger.warn("Expired JWT token for path: {}: {}", path, e.getMessage());
+                throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Token has expired");
+            } catch (io.jsonwebtoken.JwtException e) { // Bắt các lỗi JWT khác
+                logger.error("Invalid JWT token for path: {}: {}", path, e.getMessage());
                 throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid token");
+            } catch (Exception e) { // Bắt các lỗi chung khác
+                logger.error("Token validation failed unexpectedly for path: {}: {}", path, e.getMessage(), e);
+                throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Token validation error");
             }
         };
     }

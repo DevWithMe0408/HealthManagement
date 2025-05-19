@@ -5,7 +5,7 @@ import org.example.userservice.dto.request.UserRequestDTO;
 import org.example.userservice.dto.response.UserResponseDTO;
 import org.example.userservice.entity.User;
 import org.example.userservice.mapper.UserMapper;
-import org.example.userservice.service.UserService;
+import org.example.userservice.service.UserServiceImpl;
 import org.springframework.http.HttpStatus;
 
 import org.springframework.http.ResponseEntity;
@@ -18,7 +18,7 @@ import java.util.List;
 @RequiredArgsConstructor
 public class UserController {
 
-    private final UserService userService;
+    private final UserServiceImpl userService;
     private final UserMapper userMapper;
 
     @GetMapping

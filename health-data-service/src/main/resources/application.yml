@@ -7,8 +7,8 @@ spring:
 
   datasource:
     url: jdbc:mysql://localhost:3306/userdb
-    username: userdb
-    password: userdb
+    username: userdb_user
+    password: userdb_password
     driver-class-name: com.mysql.cj.jdbc.Driver
 
   jpa:
@@ -19,7 +19,19 @@ spring:
       hibernate:
         dialect: org.hibernate.dialect.MySQL8Dialect
         format_sql: true
-
+  rabbitmq:
+    host: localhost
+    port: 5672
+    username: guest
+    password: guest
+  app:
+    rabbitmq:
+      exchange:
+        user-events: user.events.exchange
+      queue:
+        health-data-user-created: health-data.user-created.queue
+      routing-key:
+        user-created: user.event.created
   data:
     redis:
       host: localhost

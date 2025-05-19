@@ -1,4 +1,4 @@
-services:
+#services:
 #  user-service:
 #    build: ./user-service
 #    ports:
@@ -17,21 +17,107 @@ services:
 #    container_name: redis-cache
 #    ports:
 #      - "6379:6379"
+#
+#  mysql:
+#    image: mysql:8.0
+#    container_name: mysql_container
+#    restart: always
+#    environment:
+#      MYSQL_ROOT_PASSWORD: rootpassword
+#      MYSQL_DATABASE: userdb
+#      MYSQL_USER: userdb
+#      MYSQL_PASSWORD: userdb
+#    ports:
+#      - "3306:3306"
+#    networks:
+#      - mynetwork
+#
+#networks:
+#  mynetwork:
+#    driver: bridge
 
+#  17/5/2025
+version: '3.8'
+services:
   mysql:
     image: mysql:8.0
     container_name: mysql_container
     restart: always
     environment:
       MYSQL_ROOT_PASSWORD: rootpassword
-      MYSQL_DATABASE: userdb
-      MYSQL_USER: userdb
-      MYSQL_PASSWORD: userdb
+      MYSQL_DATABASE: userdb # Database này sẽ được tự động tạo
+      MYSQL_USER: userdb_user # Đổi tên user để tránh trùng với tên database, hoặc giữ nguyên nếu bạn muốn
+      MYSQL_PASSWORD: userdb_password # Đổi mật khẩu cho an toàn hơn
     ports:
-      - "3306:3306"
+      - "3306:3306" # Cổng MySQL
+    volumes:
+      - mysql_data:/var/lib/mysql # Named volume cho MySQL
     networks:
-      - mynetwork
+      - mynetwork # Kết nối đến mạng đã tạo
+
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: rabbitmq_container
+    restart: always
+    ports:
+      - "5672:5672"  # Port cho AMQP (ứng dụng kết nối)
+      - "15672:15672" # Port cho Management UI (truy cập qua http://localhost:15672)
+    environment:
+    # Bạn có thể đặt username/password ở đây, nhưng mặc định là guest/guest
+    # Nếu muốn an toàn hơn, hãy đặt:
+    # RABBITMQ_DEFAULT_USER: your_rabbit_user
+    # RABBITMQ_DEFAULT_PASS: your_rabbit_password
+    # Tuy nhiên, guest/guest thường đủ cho môi trường local dev
+      RABBITMQ_DEFAULT_USER: guest # Mặc định
+      RABBITMQ_DEFAULT_PASS: guest # Mặc định
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq # Named volume cho RabbitMQ
+    networks:
+      - mynetwork # Kết nối đến mạng đã tạo
+
+  # Các service khác của bạn (user-service, health-data-service,...)
+  # user-service:
+  #   build: ./user-service # Đường dẫn đến Dockerfile của user-service
+  #   container_name: user_service_container
+  #   ports:
+  #     - "8081:8080" # Ví dụ: user-service chạy trên port 8080 bên trong container
+  #   depends_on:
+  #     - mysql
+  #     - rabbitmq
+  #   environment:
+  #     - SPRING_DATASOURCE_URL=jdbc:mysql://mysql_container:3306/userdb?useSSL=false&allowPublicKeyRetrieval=true
+  #     - SPRING_DATASOURCE_USERNAME=userdb_user
+  #     - SPRING_DATASOURCE_PASSWORD=userdb_password
+  #     - SPRING_RABBITMQ_HOST=rabbitmq_container # Service name trong docker-compose
+  #     - SPRING_RABBITMQ_PORT=5672
+  #     - SPRING_RABBITMQ_USERNAME=guest
+  #     - SPRING_RABBITMQ_PASSWORD=guest
+  #   networks:
+  #     - mynetwork
+
+  # health-data-service:
+  #   build: ./health-data-service
+  #   container_name: health_data_service_container
+  #   ports:
+  #     - "8082:8080"
+  #   depends_on:
+  #     - rabbitmq
+  #     # Có thể phụ thuộc vào MySQL nếu nó cũng dùng DB, hoặc không.
+  #   environment:
+  #     - SPRING_RABBITMQ_HOST=rabbitmq_container
+  #     - SPRING_RABBITMQ_PORT=5672
+  #     - SPRING_RABBITMQ_USERNAME=guest
+  #     - SPRING_RABBITMQ_PASSWORD=guest
+  #     # Cấu hình DB cho health-data-service nếu có
+  #   networks:
+  #     - mynetwork
+
+# Khai báo named volumes
+volumes:
+  mysql_data:
+  rabbitmq_data:
 
 networks:
   mynetwork:
     driver: bridge
+
