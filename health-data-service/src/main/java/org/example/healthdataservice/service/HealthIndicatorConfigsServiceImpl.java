@@ -58,19 +58,21 @@ public class HealthIndicatorConfigsServiceImpl implements HealthIndicatorConfigs
 
         List<HealthIndicatorConfigs> defaultConfigs = new ArrayList<>();
 
-        defaultConfigs.add(createDefaultConfig(userId,IndicatorType.HEIGHT, "Chiều cao", unitRepository.findById(4L), MeasurementFrequency.YEARLY));
-        defaultConfigs.add(createDefaultConfig(userId,IndicatorType.WEIGHT, "Cân nặng", unitRepository.findById(3L), MeasurementFrequency.WEEKLY));
-        defaultConfigs.add(createDefaultConfig(userId,IndicatorType.BMI, "Chỉ số khối cơ thể", null, MeasurementFrequency.WEEKLY));
-        defaultConfigs.add(createDefaultConfig(userId,IndicatorType.BMR, "Tỷ lệ trao đổi chất cơ bản", unitRepository.findById(5L), MeasurementFrequency.WEEKLY));
-        defaultConfigs.add(createDefaultConfig(userId,IndicatorType.TDEE, "Tổng năng lượng tiêu thụ hàng ngày", unitRepository.findById(5L), MeasurementFrequency.WEEKLY));
-        defaultConfigs.add(createDefaultConfig(userId,IndicatorType.PBF, "Tỷ lệ mỡ cơ thể", unitRepository.findById(6L), MeasurementFrequency.WEEKLY));
-        defaultConfigs.add(createDefaultConfig(userId,IndicatorType.WHR, "Tỷ lệ vòng eo/vòng hông", null, MeasurementFrequency.WEEKLY));
-        defaultConfigs.add(createDefaultConfig(userId,IndicatorType.WAIST, "Vòng eo", unitRepository.findById(4L), MeasurementFrequency.MONTHLY));
-        defaultConfigs.add(createDefaultConfig(userId,IndicatorType.HIP, "Vòng hông", unitRepository.findById(4L), MeasurementFrequency.MONTHLY));
-        defaultConfigs.add(createDefaultConfig(userId,IndicatorType.NECK, "Vòng cổ", unitRepository.findById(4L), MeasurementFrequency.MONTHLY));
-        defaultConfigs.add(createDefaultConfig(userId,IndicatorType.BUST, "Vòng ngực", unitRepository.findById(4L), MeasurementFrequency.MONTHLY));
-        defaultConfigs.add(createDefaultConfig(userId,IndicatorType.ACTIVITYFACTOR, "Hệ số hoạt động", null, MeasurementFrequency.MONTHLY));
-        // Thêm các chỉ số mặc định khác ở đây
+        for (IndicatorType type : IndicatorType.values()) {
+            Unit unit = null;
+            if (type.getDefaultUnitCode() != null) {
+                unit = unitRepository.findByCode(type.getDefaultUnitCode())
+                        .orElseGet(() -> {
+                            log.warn("Unit with code '{}' for IndicatorType '{}' not found. Config will be created without unit.",
+                                    type.getDefaultUnitCode(), type);
+                            return null;
+                        });
+            }
+            MeasurementFrequency frequency = type.getDefaultFrequency();
+            defaultConfigs.add(createDefaultConfigEntity(userId,type,type.getDefaultDisplayName(),unit,frequency));
+
+        }
+
 
         if (!defaultConfigs.isEmpty()) {
             repository.saveAll(defaultConfigs);
@@ -80,7 +82,7 @@ public class HealthIndicatorConfigsServiceImpl implements HealthIndicatorConfigs
         }
     }
 
-    private HealthIndicatorConfigs createDefaultConfig(Long userId, IndicatorType type, String displayName, Unit unit, MeasurementFrequency frequency) {
+    private HealthIndicatorConfigs createDefaultConfigEntity(Long userId, IndicatorType type, String displayName, Unit unit, MeasurementFrequency frequency) {
         HealthIndicatorConfigs config = new HealthIndicatorConfigs();
         config.setUserId(userId);
         config.setIndicatorType(type);

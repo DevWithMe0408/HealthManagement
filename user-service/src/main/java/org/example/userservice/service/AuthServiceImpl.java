@@ -39,6 +39,7 @@ public class AuthServiceImpl implements AuthService {
     @Autowired
     private AuthRepository authRepository;
 
+
     @Autowired
     private UserService userService;
 
@@ -165,8 +166,10 @@ public class AuthServiceImpl implements AuthService {
         String jwt = jwtUtil.generateToken(authentication);
         RefreshToken refreshToken = refreshTokenService.createRefreshToken(request.getUsername());
 
+
         return new TokenRefreshResponse(jwt, refreshToken.getToken());
     }
+
     @Override
     public Optional<TokenRefreshResponse> refreshAccessToken(String refreshTokenString) {
         return refreshTokenService.findByToken(refreshTokenString)

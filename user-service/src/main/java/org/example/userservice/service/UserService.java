@@ -1,5 +1,7 @@
 package org.example.userservice.service;
 
+import org.example.userservice.dto.request.UserRequestDTO;
+import org.example.userservice.dto.response.UserAccountDetailsResponse;
 import org.example.userservice.entity.Auth;
 import org.example.userservice.entity.User;
 
@@ -12,7 +14,7 @@ public interface UserService {
      Optional<User> findById(Long id);
      List<User> findAll();
      void deleteById(Long id);
-     User updateUser(Long id, User newUserData);
+     User updateUserProfile(Long id, User newUserData);
      void deleteUserAndAuthById(Long userId);
      User createAndAssociateUser(Auth auth);
 }

@@ -5,4 +5,5 @@ public enum MeasurementFrequency {
     WEEKLY,
     MONTHLY,
     YEARLY,
+    ON_CHANGE,
 }

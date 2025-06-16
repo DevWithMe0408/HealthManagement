@@ -29,4 +29,6 @@ public class User {
 
     @OneToOne(mappedBy = "user")
     private Auth auth;
+
+    private Integer age;
 }

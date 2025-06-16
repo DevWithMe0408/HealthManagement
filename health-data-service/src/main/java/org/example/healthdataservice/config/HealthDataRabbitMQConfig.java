@@ -22,6 +22,12 @@ public class HealthDataRabbitMQConfig {
     @Value("${app.rabbitmq.routing-key.user-created}")
     private String userCreatedRoutingKey;
 
+    @Value("${app.rabbitmq.queue.health-data-user-profile-updated}")
+    private String userProfileUpdatedQueueName;
+
+    @Value("${app.rabbitmq.routing-key.user-profile-updated}")
+    private String userProfileUpdatedRoutingKey;
+
     // 1. Định nghĩa Queue cho service này để nhận UserCreatedEvent
     @Bean
     Queue healthDataUserCreatedQueue() {
@@ -53,4 +59,19 @@ public class HealthDataRabbitMQConfig {
     // 5. (Tùy chọn) Cấu hình RabbitTemplate nếu Health-Data-Service cũng cần GỬI message.
     // Trong trường hợp này, nó chủ yếu là consumer, nên không bắt buộc.
     // Spring Boot sẽ tự động cấu hình listener để sử dụng MessageConverter đã định nghĩa ở trên.
+
+    @Bean
+    Queue healthDataUserProfileUpdatedQueue() {
+        // Durable queue (true)
+        return new Queue(userProfileUpdatedQueueName, true, false, false);
+    }
+    @Bean
+    Binding healthDataUserProfileUpdatedBinding(Queue healthDataUserProfileUpdatedQueue, TopicExchange userEventsExchange) {
+        // userEventsExchange sẽ được tự động inject nếu bạn đã khai báo bean cho nó ở đâu đó
+        // hoặc nếu User Service đã tạo nó trên broker.
+        // Nếu không, bạn cần khai báo @Bean TopicExchange userEventsExchange() ở đây với cùng tên.
+        return BindingBuilder.bind(healthDataUserProfileUpdatedQueue)
+                .to(userEventsExchange)
+                .with(userProfileUpdatedRoutingKey);
+    }
 }

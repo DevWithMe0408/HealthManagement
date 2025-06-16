@@ -16,7 +16,7 @@ public class Unit {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false, unique = true)
+    @Column(name = "code",nullable = false, unique = true)
     private String code; // Ví dụ: kg, cm, %, bmi
 
     private String name; // Ví dụ: Kilogram, Centimeter

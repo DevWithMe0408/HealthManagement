@@ -35,8 +35,10 @@ app:
       user-events: user.events.exchange
     queue:
       health-data-user-created: health-data.user-created.queue
+      health-data-user-profile-updated: health-data.user-profile-updated.queue
     routing-key:
       user-created: user.event.created
+      user-profile-updated: user.profile.updated
 
 eureka:
   client:

@@ -1,5 +1,6 @@
 package org.example.userservice.service;
 
+import org.example.userservice.entity.Auth;
 import org.example.userservice.entity.RefreshToken;
 
 import java.util.Optional;

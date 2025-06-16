@@ -36,17 +36,24 @@ public class RefreshTokenServiceImpl implements RefreshTokenService {
         Auth authUser = authRepository.findByUsername(username)
                 .orElseThrow(()-> new RuntimeException("Error: User not found for refresh token generation."));
 
-        // Xóa refresh token cũ của user này nếu có (đảm bảo mỗi user chỉ có 1 refresh token active
-        refreshTokenRepository.findByAuth(authUser).ifPresent(existingToken -> {
-            refreshTokenRepository.delete(existingToken);
-        });
+        Optional<RefreshToken> existingTokenOptional = refreshTokenRepository.findByAuth(authUser);
 
-        RefreshToken newRefreshToken = new RefreshToken();
-        newRefreshToken.setAuth(authUser);
-        newRefreshToken.setExpiryDate(Instant.now().plusMillis(refreshExpirationDurationMs));
-        newRefreshToken.setToken(UUID.randomUUID().toString());
+        RefreshToken refreshTokenToSave;
+        if (existingTokenOptional.isPresent()) {
+            // If a token already exists for this user, update it
+            refreshTokenToSave = existingTokenOptional.get();
+            refreshTokenToSave.setToken(UUID.randomUUID().toString());
+            refreshTokenToSave.setExpiryDate(Instant.now().plusMillis(refreshExpirationDurationMs));
+        } else {
+            // If no token exists, create a new one
+            refreshTokenToSave = new RefreshToken();
+            refreshTokenToSave.setAuth(authUser);
+            refreshTokenToSave.setToken(UUID.randomUUID().toString());
+            refreshTokenToSave.setExpiryDate(Instant.now().plusMillis(refreshExpirationDurationMs));
+        }
 
-        return refreshTokenRepository.save(newRefreshToken);
+        return refreshTokenRepository.save(refreshTokenToSave);
+
     }
     @Override
     public Optional<RefreshToken> findByToken(String tokenValue) {

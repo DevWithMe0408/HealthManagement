@@ -1,21 +1,26 @@
-package org.example.userservice.dto.request;
+package org.example.userservice.dto.response;
 
-import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.example.userservice.enums.Gender;
 
 import java.time.LocalDate;
+import java.util.List;
 
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class UserRequestDTO {
+@Builder
+public class UserAccountDetailsResponse {
+    private Long userId;
+    private String userName;
+    private String email;
+    private List<String> roles;
 
-    @Size(min = 2, max = 100, message = "Họ và tên phải từ 2 đến 100 ký tự")
     private String name;
-    private String phone;
+    private String phoneNumber;
     private LocalDate birthDate;
     private Gender gender;
 }

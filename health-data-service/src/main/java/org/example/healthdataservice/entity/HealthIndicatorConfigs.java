@@ -8,7 +8,10 @@ import org.example.healthdataservice.entity.enums.IndicatorType;
 import org.example.healthdataservice.entity.enums.MeasurementFrequency;
 
 @Entity
-@Table(name = "health_indicator_configs")
+@Table(name = "health_indicator_configs",
+        uniqueConstraints = {
+                @UniqueConstraint(columnNames = {"user_id", "indicator_type"})
+        })
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -21,7 +24,7 @@ public class HealthIndicatorConfigs {
     private Long userId;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "indicator_type", nullable = false, unique = true)
+    @Column(name = "indicator_type", nullable = false,length = 500)
     private IndicatorType indicatorType; // Ví dụ: BMI, WHR, PBF,...
 
     @Column(name = "display_name")
