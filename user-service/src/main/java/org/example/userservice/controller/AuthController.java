@@ -44,9 +44,6 @@ public class AuthController {
 
     @PostMapping("/register")
     public ResponseEntity<?> register(@RequestBody RegisterRequest registerRequest) {
-        // Các exception như UsernameAlreadyExistsException, EmailAlreadyExistsException
-        // sẽ được ném từ service và có thể được xử lý bằng @ControllerAdvice
-        // hoặc bắt tại đây nếu muốn custom response cụ thể hơn.
         authService.registerUser(registerRequest);
         return ResponseEntity.ok((new MessageResponse("User registered successfully!")));
     }
@@ -70,14 +67,4 @@ public class AuthController {
                 .map(ResponseEntity::ok)
                 .orElseThrow(() -> new TokenRefreshException(requestRefreshToken, "Refresh token not found or invalid"));
     }
-    // Bạn có thể thêm một @ControllerAdvice để xử lý các custom exceptions
-    // Ví dụ:
-    // @ExceptionHandler(UsernameAlreadyExistsException.class)
-    // public ResponseEntity<?> handleUsernameAlreadyExists(UsernameAlreadyExistsException ex) {
-    // return ResponseEntity.badRequest().body(new MessageResponse(ex.getMessage()));
-    // }
-    // @ExceptionHandler(TokenRefreshException.class)
-    // public ResponseEntity<?> handleTokenRefreshException(TokenRefreshException ex) {
-    // return ResponseEntity.status(HttpStatus.FORBIDDEN).body(new MessageResponse(ex.getMessage()));
-    // }
 }
