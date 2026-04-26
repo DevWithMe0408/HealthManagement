@@ -14,9 +14,10 @@ import java.time.LocalDate;
 @NoArgsConstructor
 @AllArgsConstructor
 public class User {
+
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    @Column(length = 36, updatable = false, nullable = false)
+    private String id;
 
     private String name;
 
@@ -27,7 +28,8 @@ public class User {
     @Enumerated(EnumType.STRING)
     private Gender gender;
 
-    @OneToOne(mappedBy = "user")
+    @OneToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "auth_id", referencedColumnName = "id", nullable = false, unique = true)
     private Auth auth;
 
     private Integer age;

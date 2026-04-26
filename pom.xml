@@ -23,6 +23,7 @@
         <module>nutrition-service</module>
         <module>notification-service</module>
         <module>common-events</module>
+        <module>common-security</module>
     </modules>
 
     <properties>
@@ -33,6 +34,7 @@
         <jjwt.version>0.12.5</jjwt.version>
         <slf4j.version>2.0.9</slf4j.version>
         <mapstruct.version>1.5.5.Final</mapstruct.version>
+        <uuid-creator.version>5.3.7</uuid-creator.version>
     </properties>
 
     <dependencyManagement>
@@ -108,6 +110,12 @@
                 <artifactId>mapstruct-processor</artifactId>
                 <version>${mapstruct.version}</version>
                 <scope>provided</scope>
+            </dependency>
+            <!-- UUID v7 -->
+            <dependency>
+                <groupId>com.github.f4b6a3</groupId>
+                <artifactId>uuid-creator</artifactId>
+                <version>${uuid-creator.version}</version>
             </dependency>
         </dependencies>
     </dependencyManagement>

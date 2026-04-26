@@ -8,12 +8,13 @@ import java.time.Instant;
 @Entity
 @Data
 public class RefreshToken {
+
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    @Column(length = 36, updatable = false, nullable = false)
+    private String id;
 
     @OneToOne
-    @JoinColumn(name ="auth_id", referencedColumnName = "id", nullable = false, unique = true)
+    @JoinColumn(name = "auth_id", referencedColumnName = "id", nullable = false, unique = true)
     private Auth auth;
 
     @Column(nullable = false, unique = true)

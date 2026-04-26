@@ -4,6 +4,7 @@ import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.example.userservice.common.util.UuidV7Generator;
 import org.example.userservice.enums.Role;
 
 @Entity
@@ -12,9 +13,10 @@ import org.example.userservice.enums.Role;
 @NoArgsConstructor
 @AllArgsConstructor
 public class Auth {
+
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    @Column(length = 36, updatable = false, nullable = false)
+    private String id;
 
     @Column(unique = true, nullable = false)
     private String username;
@@ -22,20 +24,18 @@ public class Auth {
     @Column(nullable = false)
     private String password;
 
-    @Column(nullable = false)
+    @Column(unique = true, nullable = false)
     private String email;
 
     @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
     private Role role;
 
-    @OneToOne
-    @JoinColumn(name = "user_id")  // auth.user_id → users.id
-    private User user;
-
     public Auth(String username, String password, String email) {
+        this.id = UuidV7Generator.generate();
         this.username = username;
         this.password = password;
         this.email = email;
-        this.role = Role.ROLE_USER; // Default role
+        this.role = Role.ROLE_USER;
     }
 }

@@ -10,7 +10,7 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 public class UserProfileResponse {
-    private Long userId; // Thêm userId
+    private String userId;
     private String username;
     private List<String> roles;
     // Thêm các trường khác nếu muốn trả về (ví dụ: email, name từ bảng User)

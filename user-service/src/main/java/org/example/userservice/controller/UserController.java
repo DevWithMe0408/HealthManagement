@@ -1,6 +1,5 @@
 package org.example.userservice.controller;
 
-import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.example.userservice.dto.request.UserRequestDTO;
 import org.example.userservice.dto.response.UserAccountDetailsResponse;
@@ -9,12 +8,10 @@ import org.example.userservice.dto.response.UserResponseDTO;
 import org.example.userservice.entity.Auth;
 import org.example.userservice.entity.User;
 import org.example.userservice.mapper.UserMapper;
-import org.example.userservice.repository.AuthRepository;
 import org.example.userservice.repository.UserRepository;
 import org.example.userservice.security.CustomUserDetails;
 import org.example.userservice.service.UserServiceImpl;
 import org.springframework.http.HttpStatus;
-
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
@@ -35,7 +32,6 @@ public class UserController {
 
     private final UserServiceImpl userService;
     private final UserMapper userMapper;
-    private final AuthRepository authRepository;
     private final UserRepository userRepository;
 
     @GetMapping("/allUsers")
@@ -51,87 +47,60 @@ public class UserController {
     public ResponseEntity<UserProfileResponse> getCurrentUserProfile(
             @RequestHeader(name = "username", required = false) String usernameFromGateway,
             @RequestHeader(name = "userId", required = false) String userIdFromGateway,
-            @RequestHeader(name = "userRoles", required = false) String rolesFromGateway)
-    {
-        // Cách 1: Ưu tiên lấy từ SecurityContextHolder nếu User Service cũng có Spring Security
-        // và được cấu hình để tạo Principal từ thông tin Gateway gửi.
-        Authentication authentication =
-                SecurityContextHolder.getContext().getAuthentication();
+            @RequestHeader(name = "userRoles", required = false) String rolesFromGateway) {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         String username;
         List<String> roles;
-        Long userId = null;
+        String userId = null;
 
         if (authentication != null && authentication.isAuthenticated() &&
                 !(authentication.getPrincipal() instanceof String &&
                         authentication.getPrincipal().equals("anonymousUser"))) {
             if (authentication.getPrincipal() instanceof UserDetails) {
                 username = ((UserDetails) authentication.getPrincipal()).getUsername();
-                // Nếu CustomUserDetails của bạn có ID:
-                 if (authentication.getPrincipal() instanceof CustomUserDetails) {
-                     userId = ((CustomUserDetails) authentication.getPrincipal()).getId();
-                 }
+                if (authentication.getPrincipal() instanceof CustomUserDetails) {
+                    userId = ((CustomUserDetails) authentication.getPrincipal()).getId();
+                }
             } else {
                 username = authentication.getName();
             }
             roles = authentication.getAuthorities().stream()
                     .map(GrantedAuthority::getAuthority)
                     .collect(Collectors.toList());
-
-            // Cố gắng lấy userId nếu Principal là CustomUserDetails có id
-            // Hoặc nếu bạn đã cấu hình để userId được đưa vào Principal.
         } else if (usernameFromGateway != null) {
-            // Cách 2: Nếu không có Principal đầy đủ, dựa vào header từ Gateway
-            // (Ít an toàn hơn nếu User Service có thể được gọi trực tiếp bỏ qua Gateway,
-            // nhưng chấp nhận được nếu Gateway là entry point duy nhất)
             username = usernameFromGateway;
             roles = (rolesFromGateway != null && !rolesFromGateway.isEmpty()) ?
-                    Arrays.asList(rolesFromGateway.split(",")) : // Giả sử roles là chuỗi cách nhau bởi dấu phẩy
-                    List.of(); // Hoặc List.of("ROLE_USER") mặc định nếu không có
+                    Arrays.asList(rolesFromGateway.split(",")) :
+                    List.of();
             if (userIdFromGateway != null) {
-                try {
-                    userId = Long.parseLong(userIdFromGateway);
-                } catch (NumberFormatException e) {
-                    throw new RuntimeException(e);
-                }
+                userId = userIdFromGateway;
             }
         } else {
-            // Không có thông tin xác thực
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
-        // Nếu userId vẫn null và bạn cần nó, bạn có thể phải query DB dựa trên username
-        // Ví dụ: Auth auth = authRepository.findByUsername(username).orElse(null);
-        // if (auth != null && auth.getUser() != null) { userId = auth.getUser().getId(); }
         UserProfileResponse response = new UserProfileResponse(userId, username, roles);
         return ResponseEntity.ok(response);
     }
 
-
     @GetMapping("/{id}")
-    public ResponseEntity<?> getUserById(@PathVariable Long id) {
+    public ResponseEntity<?> getUserById(@PathVariable String id) {
         return userService.findById(id)
                 .<ResponseEntity<?>>map(user -> ResponseEntity.ok(userMapper.toDTO(user)))
                 .orElse(ResponseEntity.status(HttpStatus.NOT_FOUND).body("User not found"));
     }
 
-
     @GetMapping("/account-details")
     public ResponseEntity<UserAccountDetailsResponse> getAccountDetails(
             @RequestHeader("userId") String userIdFromGateway) {
-        Long userId;
-        try {
-            userId = Long.parseLong(userIdFromGateway);
-        } catch (NumberFormatException e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
-        }
-        Optional<User> userOpt = userRepository.findById(userId);
-        Optional<Auth> authOpt = authRepository.findByUserId(userId);
-
-        if (userOpt.isEmpty() || authOpt.isEmpty()) {
+        Optional<User> userOpt = userRepository.findById(userIdFromGateway);
+        if (userOpt.isEmpty()) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
         }
-
         User user = userOpt.get();
-        Auth auth = authOpt.get();
+        Auth auth = user.getAuth();
+        if (auth == null) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+        }
 
         List<String> roles = Collections.singletonList(auth.getRole().name());
 
@@ -146,7 +115,6 @@ public class UserController {
                 .gender(user.getGender() != null ? user.getGender() : null)
                 .build();
         return ResponseEntity.ok(response);
-
     }
 
     @PostMapping
@@ -157,7 +125,7 @@ public class UserController {
     }
 
     @PutMapping("/update/{id}")
-    public ResponseEntity<?> updateUser(@PathVariable Long id, @RequestBody UserRequestDTO userDTO) {
+    public ResponseEntity<?> updateUser(@PathVariable String id, @RequestBody UserRequestDTO userDTO) {
         try {
             User updated = userService.updateUserProfile(id, userMapper.toEntity(userDTO));
             return ResponseEntity.ok(userMapper.toDTO(updated));
@@ -167,7 +135,7 @@ public class UserController {
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<?> deleteUser(@PathVariable Long id) {
+    public ResponseEntity<?> deleteUser(@PathVariable String id) {
         try {
             userService.deleteUserAndAuthById(id);
             return ResponseEntity.ok("User and associated auth deleted successfully");

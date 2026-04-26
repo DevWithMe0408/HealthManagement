@@ -14,6 +14,7 @@ import org.springframework.web.bind.annotation.*;
 @RequestMapping("/api/user")
 @RequiredArgsConstructor
 public class UserAccountController {
+
     @Autowired
     private final UserAccountService userAccountService;
 
@@ -22,22 +23,11 @@ public class UserAccountController {
             @RequestHeader("userId") String userIdFromGateway,
             @Valid @RequestBody UserRequestDTO request
     ) {
-        Long userId;
         try {
-            userId = Long.parseLong(userIdFromGateway);
-        } catch (NumberFormatException e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Invalid User ID format in header.");
-        }
-
-        try {
-            UserAccountDetailsResponse updatedUserDetails = userAccountService.updateUserAccount(userId, request);
+            UserAccountDetailsResponse updatedUserDetails = userAccountService.updateUserAccount(userIdFromGateway, request);
             return ResponseEntity.ok(updatedUserDetails);
-        } catch (RuntimeException e) { // Bắt các exception cụ thể hơn nếu có (ví dụ: UserNotFoundException)
-            // Log lỗi ở service layer
+        } catch (RuntimeException e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.getMessage());
         }
-        // Các lỗi validation từ @Valid sẽ được Spring xử lý tự động và trả về 400 BAD REQUEST
-        // Bạn có thể custom xử lý lỗi validation bằng @ControllerAdvice nếu muốn.
     }
-
 }

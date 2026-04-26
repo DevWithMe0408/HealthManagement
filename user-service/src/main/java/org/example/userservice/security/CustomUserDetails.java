@@ -9,42 +9,40 @@ import org.springframework.security.core.userdetails.UserDetails;
 import java.util.Collection;
 import java.util.Collections;
 
-public class CustomUserDetails  implements UserDetails {
-    private Long id; // Có thể là user_id từ bảng users
-    private String username; // Từ bảng auth
-    private String password; // Từ bảng auth (đã mã hóa)
-    private String email;    // Từ bảng auth
+public class CustomUserDetails implements UserDetails {
+
+    private String id;          // user.id (UUID)
+    private String username;    // auth.username
+    private String password;    // auth.password (encoded)
+    private String email;       // auth.email
     private Collection<? extends GrantedAuthority> authorities;
 
-    // Thêm các trường từ bảng User nếu bạn muốn truy cập trực tiếp qua Principal
-    private String name; // Từ bảng users
-    private String phoneNumber; // Từ bảng users
-    // ... các trường khác của User ...
+    private String name;        // user.name
+    private String phoneNumber; // user.phone
 
-    // Constructor nhận vào Auth entity (và có thể cả User entity nếu bạn join sẵn)
+    /**
+     * Constructor used when only Auth is loaded. id stays null until a User is also passed.
+     */
     public CustomUserDetails(Auth auth) {
         this.username = auth.getUsername();
         this.password = auth.getPassword();
         this.email = auth.getEmail();
-        // Chuyển đổi Role enum thành GrantedAuthority
         this.authorities = Collections.singletonList(new SimpleGrantedAuthority(auth.getRole().name()));
+    }
 
-        // Nếu Auth entity có tham chiếu đến User entity (ví dụ @OneToOne User user)
-        if (auth.getUser() != null) {
-            User user = auth.getUser();
+    /**
+     * Constructor used when both Auth and the linked User are loaded.
+     */
+    public CustomUserDetails(Auth auth, User user) {
+        this(auth);
+        if (user != null) {
             this.id = user.getId();
             this.name = user.getName();
             this.phoneNumber = user.getPhone();
-            // ... gán các trường khác từ User entity ...
-        } else {
-            // Xử lý trường hợp user chưa được liên kết đầy đủ hoặc không có thông tin user
-            // (ví dụ, trong quá trình đăng ký Auth được tạo trước)
-            // Hoặc nếu bạn muốn lazy load User, thì không gán ở đây.
         }
     }
 
-    // Hoặc một constructor khác nếu bạn query User và Auth riêng
-    public CustomUserDetails(Long id, String username, String email, String password, String role, String name, String phoneNumber /*, ...các trường khác của User... */) {
+    public CustomUserDetails(String id, String username, String email, String password, String role, String name, String phoneNumber) {
         this.id = id;
         this.username = username;
         this.email = email;
@@ -52,9 +50,7 @@ public class CustomUserDetails  implements UserDetails {
         this.authorities = Collections.singletonList(new SimpleGrantedAuthority(role));
         this.name = name;
         this.phoneNumber = phoneNumber;
-        // ...
     }
-
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
@@ -68,11 +64,9 @@ public class CustomUserDetails  implements UserDetails {
 
     @Override
     public String getUsername() {
-        // Trả về username dùng để đăng nhập (thường là username từ bảng auth)
         return username;
     }
 
-    // Các phương thức khác của UserDetails (thường trả về true cho user active)
     @Override
     public boolean isAccountNonExpired() {
         return true;
@@ -90,11 +84,10 @@ public class CustomUserDetails  implements UserDetails {
 
     @Override
     public boolean isEnabled() {
-        return true; // Hoặc dựa trên một trường 'active' trong DB
+        return true;
     }
 
-    // Thêm các getter cho thông tin User mà bạn muốn truy cập
-    public Long getId() {
+    public String getId() {
         return id;
     }
 
@@ -109,5 +102,4 @@ public class CustomUserDetails  implements UserDetails {
     public String getPhoneNumber() {
         return phoneNumber;
     }
-    // ...
 }
