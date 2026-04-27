@@ -8,7 +8,7 @@ import java.util.List;
 
 public interface HistoricalDataService {
     List<HistoricalDataPointDTO> getHistoricalData(
-            Long userId,
+            String userId,
             IndicatorType indicatorType,
             LocalDateTime fromDate,
             LocalDateTime toDate,

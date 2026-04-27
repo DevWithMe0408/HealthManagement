@@ -12,5 +12,5 @@ public interface HealthIndicatorConfigsService {
     HealthIndicatorConfigs save(HealthIndicatorConfigs configs);
 
     // Phương thức mới để tạo configs mặc định
-    void createDefaultHealthIndicatorConfigsForUser(Long userId);
+    void createDefaultHealthIndicatorConfigsForUser(String userId);
 }

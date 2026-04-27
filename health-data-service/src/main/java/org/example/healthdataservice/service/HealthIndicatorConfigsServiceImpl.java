@@ -47,7 +47,7 @@ public class HealthIndicatorConfigsServiceImpl implements HealthIndicatorConfigs
 
     @Override
     @Transactional
-    public void createDefaultHealthIndicatorConfigsForUser(Long userId) {
+    public void createDefaultHealthIndicatorConfigsForUser(String userId) {
         log.info("Default health indicator configs already exist for userid: {}", userId);
 
         // Kiểm tra xem user đã có config chưa để tránh tạo trùng (Idempotency)
@@ -82,7 +82,7 @@ public class HealthIndicatorConfigsServiceImpl implements HealthIndicatorConfigs
         }
     }
 
-    private HealthIndicatorConfigs createDefaultConfigEntity(Long userId, IndicatorType type, String displayName, Unit unit, MeasurementFrequency frequency) {
+    private HealthIndicatorConfigs createDefaultConfigEntity(String userId, IndicatorType type, String displayName, Unit unit, MeasurementFrequency frequency) {
         HealthIndicatorConfigs config = new HealthIndicatorConfigs();
         config.setUserId(userId);
         config.setIndicatorType(type);

@@ -21,7 +21,8 @@ public class HealthIndicatorConfigs {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    private Long userId;
+    @Column(name = "user_id", length = 36)
+    private String userId;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "indicator_type", nullable = false,length = 500)

@@ -55,7 +55,7 @@ public class HealthDataController {
 
     @GetMapping("/latest-metrics")
     public ResponseEntity<LatestHealthDataResponse> getLatestUserMetrics(
-            @RequestHeader("userId") Long userId //// Lấy userId từ header do API Gateway thêm vào
+            @RequestHeader("userId") String userId //// Lấy userId từ header do API Gateway thêm vào
     ) {
         if (userId == null) {
             return ResponseEntity.badRequest().build();
@@ -85,7 +85,7 @@ public class HealthDataController {
     }
     @GetMapping("/dashboard-metrics")
     public ResponseEntity<DashboardMetricsResponse> getDashboardMetrics(
-            @RequestHeader("userId") Long userId
+            @RequestHeader("userId") String userId
     ) {
         if (userId == null) {
             return ResponseEntity.badRequest().build();
@@ -125,7 +125,7 @@ public class HealthDataController {
 
     @GetMapping("/query/history/{indicatorTypeString}")
     public ResponseEntity<List<HistoricalDataPointDTO>> getIndicatorHistory(
-            @RequestHeader("userId") Long userId,
+            @RequestHeader("userId") String userId,
             @PathVariable String indicatorTypeString,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to,

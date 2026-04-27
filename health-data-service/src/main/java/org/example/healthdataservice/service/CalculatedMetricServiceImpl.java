@@ -48,7 +48,7 @@ public class CalculatedMetricServiceImpl implements CalculatedMetricService {
 
     @Override
     @Transactional
-    public void saveUserProvidedCalculatedMetric(Long userId, IndicatorType type, Double value, Unit unit, LocalDateTime providedAt) {
+    public void saveUserProvidedCalculatedMetric(String userId, IndicatorType type, Double value, Unit unit, LocalDateTime providedAt) {
         if (!type.isCalculatedMetric()) {// Kiểm tra xem có phải là loại có thể tính toán không
             log.warn("Attempted to save user-provided metric for non-calculated type: {}", type);
             return;
@@ -71,7 +71,7 @@ public class CalculatedMetricServiceImpl implements CalculatedMetricService {
 
     @Override
     @Transactional
-    public void recalculateAndSaveDerivedMetrics(Long userId, Set<IndicatorType> changedBaseMetrics) {
+    public void recalculateAndSaveDerivedMetrics(String userId, Set<IndicatorType> changedBaseMetrics) {
         if (changedBaseMetrics == null || changedBaseMetrics.isEmpty()) {
             log.info("No base metrics changed for userId {}. Skipping recalculation of derived metrics.", userId);
             return;
@@ -148,7 +148,7 @@ public class CalculatedMetricServiceImpl implements CalculatedMetricService {
 
     @Override
     @Transactional
-    public void recalculateAllDerivedMetricsForUser(Long userId) {
+    public void recalculateAllDerivedMetricsForUser(String userId) {
         log.info("Recalculating all derived metrics for userId {}",userId);
         Set<IndicatorType> allRelevantBaseMetrics = Stream.of(
                 IndicatorType.HEIGHT, IndicatorType.WEIGHT,IndicatorType.WAIST,
@@ -157,7 +157,7 @@ public class CalculatedMetricServiceImpl implements CalculatedMetricService {
         recalculateAndSaveDerivedMetrics(userId, allRelevantBaseMetrics);
     }
 
-    private void saveSystemCalculatedMetric(Long userId, IndicatorType type, Double value, LocalDateTime calculatedAt) {
+    private void saveSystemCalculatedMetric(String userId, IndicatorType type, Double value, LocalDateTime calculatedAt) {
         if (value == null) {
             log.debug("Calculated value for {} is null for userId {}. Skipping save.", type, userId);
             return;
@@ -212,7 +212,7 @@ public class CalculatedMetricServiceImpl implements CalculatedMetricService {
                 changedBaseMetrics.contains(IndicatorType.ACTIVITY_FACTOR);
     }
     @Override
-    public Optional<CalculatedMetricSnapshot> getLatestSnapshot(Long userId, IndicatorType type) {
+    public Optional<CalculatedMetricSnapshot> getLatestSnapshot(String userId, IndicatorType type) {
         if (!type.isCalculatedMetric() && type.getCategory() != IndicatorCategory.USER_PROVIDED_CALCULATED) {
             log.warn("Attempted to get snapshot for non-calculated/non-user-provided-calculated type: {} for userId {}", type, userId);
         }

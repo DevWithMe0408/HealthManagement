@@ -9,7 +9,7 @@ import java.util.Optional;
 @Service
 public interface UserProfileMirrorService {
 
-    public void saveOrUpdateUserProfile(Long userId, LocalDate birthDate, String genderString);
-    public Optional<UserForHealthData> getUserProfile(Long userId);
-    void createDefaultUserForHealthData(Long id);
+    public void saveOrUpdateUserProfile(String userId, LocalDate birthDate, String genderString);
+    public Optional<UserForHealthData> getUserProfile(String userId);
+    void createDefaultUserForHealthData(String userId);
 }

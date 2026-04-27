@@ -37,7 +37,7 @@ public class HealthDataSubmitServiceImpl implements HealthDataSubmitService {
     @Transactional
     public void processSubmittedHealthData(SubmitHealthDataRequest request) {
 
-        Long userId = request.getUserId();
+        String userId = request.getUserId();
         LocalDateTime now = LocalDateTime.now(); // Thời điểm ghi nhận
         Set<IndicatorType> changedBaseMetrics = new HashSet<>();
 
@@ -79,7 +79,7 @@ public class HealthDataSubmitServiceImpl implements HealthDataSubmitService {
 
     }
 
-    private void saveBaseMetricFromRequest(Long userId, IndicatorType type, Double value, LocalDateTime recordedAt, Set<IndicatorType> changedMetricsCollector) {
+    private void saveBaseMetricFromRequest(String userId, IndicatorType type, Double value, LocalDateTime recordedAt, Set<IndicatorType> changedMetricsCollector) {
         if (value != null) { // Chỉ xử lý nếu người dùng cung cấp giá trị
             Unit unit = null;
             if (type.getDefaultUnitCode() != null) {

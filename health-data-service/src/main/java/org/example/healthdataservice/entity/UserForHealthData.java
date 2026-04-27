@@ -17,8 +17,8 @@ import java.time.LocalDateTime;
 public class UserForHealthData {
 
     @Id
-    @Column(name = "user_id", nullable = false,unique = true)
-    private Long userId;
+    @Column(name = "user_id", nullable = false, unique = true, length = 36)
+    private String userId;
 
     @Column(name = "birth_data")
     private LocalDate birthDate;
