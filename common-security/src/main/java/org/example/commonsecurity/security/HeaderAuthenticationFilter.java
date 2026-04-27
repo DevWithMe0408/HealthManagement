@@ -36,13 +36,8 @@ public class HeaderAuthenticationFilter extends OncePerRequestFilter {
             UsernamePasswordAuthenticationToken auth =
                     new UsernamePasswordAuthenticationToken(username, null, authorities);
 
-            try {
-                auth.setDetails(Long.parseLong(userId));
-            } catch (NumberFormatException e) {
-                // userId khong hop le - khong set authentication, request se bi chan boi @PreAuthorize
-                chain.doFilter(req, res);
-                return;
-            }
+            // userId la UUID String - giu nguyen, khong parse Long
+            auth.setDetails(userId);
 
             SecurityContextHolder.getContext().setAuthentication(auth);
         }
