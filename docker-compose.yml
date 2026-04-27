@@ -44,7 +44,7 @@ services:
     container_name: mysql_container
     restart: always
     environment:
-      MYSQL_ROOT_PASSWORD: rootpassword
+      MYSQL_ROOT_PASSWORD: rootpassword # acc root
       MYSQL_DATABASE: userdb # Database này sẽ được tự động tạo
       MYSQL_USER: userdb_user # Đổi tên user để tránh trùng với tên database, hoặc giữ nguyên nếu bạn muốn
       MYSQL_PASSWORD: userdb_password # Đổi mật khẩu cho an toàn hơn
