@@ -5,6 +5,8 @@ import org.example.events.UserProfileUpdatedEvent;
 import org.example.userservice.common.util.UuidV7Generator;
 import org.example.userservice.entity.Auth;
 import org.example.userservice.entity.User;
+import org.example.userservice.exception.BusinessException;
+import org.example.userservice.exception.ErrorCode;
 import org.example.userservice.repository.AuthRepository;
 import org.example.userservice.repository.RefreshTokenRepository;
 import org.example.userservice.repository.UserRepository;
@@ -75,7 +77,7 @@ public class UserServiceImpl implements UserService {
     @Transactional
     public User updateUserProfile(String id, User newUserDataRequest) {
         User existingUser = userRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("User not found with id: " + id));
+                .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
         boolean birthDateActuallyChanged = false;
         boolean genderActuallyChanged = false;
 
@@ -132,7 +134,7 @@ public class UserServiceImpl implements UserService {
     @Transactional
     public void deleteUserAndAuthById(String userId) {
         User user = userRepository.findById(userId)
-                .orElseThrow(() -> new RuntimeException("User not found with id: " + userId));
+                .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
 
         Auth auth = user.getAuth();
 

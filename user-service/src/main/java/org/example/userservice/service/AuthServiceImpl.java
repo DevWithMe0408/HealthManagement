@@ -9,9 +9,11 @@ import org.example.userservice.entity.Auth;
 import org.example.userservice.entity.RefreshToken;
 import org.example.userservice.entity.User;
 import org.example.userservice.enums.Role;
-import org.example.userservice.exception.TokenRefreshException;
-import org.example.userservice.exception.UsernameAlreadyExistsException;
+import org.example.userservice.exception.BusinessException;
+import org.example.userservice.exception.ErrorCode;
 import org.example.userservice.repository.AuthRepository;
+import org.example.userservice.repository.UserRepository;
+import org.example.userservice.security.CustomUserDetails;
 import org.example.userservice.security.JwtUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -27,8 +29,6 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.List;
-import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -38,6 +38,9 @@ public class AuthServiceImpl implements AuthService {
 
     @Autowired
     private AuthRepository authRepository;
+
+    @Autowired
+    private UserRepository userRepository;
 
     @Autowired
     private UserService userService;
@@ -82,10 +85,10 @@ public class AuthServiceImpl implements AuthService {
     @Transactional
     public void registerUser(RegisterRequest request) {
         if (existsByUsername(request.getUsername())) {
-            throw new UsernameAlreadyExistsException("Username is already taken");
+            throw new BusinessException(ErrorCode.USERNAME_TAKEN);
         }
         if (existsByEmail(request.getEmail())) {
-            throw new UsernameAlreadyExistsException("Email is already in use");
+            throw new BusinessException(ErrorCode.EMAIL_TAKEN);
         }
         // 1. Create Auth (UUID v7 generated inside the constructor)
         Auth auth = new Auth(
@@ -111,6 +114,7 @@ public class AuthServiceImpl implements AuthService {
             log.info("UserCreatedEvent sent successfully to exchange '{}' with routing key '{}'", userEventsExchangeName, userCreateRoutingKey);
         } catch (Exception e) {
             log.error("Failed to send UserCreatedEvent for userId: {}. Error: {}", event.getUserId(), e.getMessage(), e);
+            throw new BusinessException(ErrorCode.EVENT_PUBLISH_FAILED);
         }
         log.info("User {} registered successfully. Auth ID: {}, User ID: {}", savedAuth.getUsername(), savedAuth.getId(), savedUser.getId());
     }
@@ -128,27 +132,29 @@ public class AuthServiceImpl implements AuthService {
         SecurityContextHolder.getContext().setAuthentication(authentication);
 
         String jwt = jwtUtil.generateToken(authentication);
-        RefreshToken refreshToken = refreshTokenService.createRefreshToken(request.getUsername());
+        Auth auth = ((org.example.userservice.security.CustomUserDetails) authentication.getPrincipal()).getAuth();
+        RefreshToken refreshToken = refreshTokenService.createRefreshToken(auth);
 
         return new TokenRefreshResponse(jwt, refreshToken.getToken());
     }
 
     @Override
-    public Optional<TokenRefreshResponse> refreshAccessToken(String refreshTokenString) {
-        return refreshTokenService.findByToken(refreshTokenString)
-                .map(refreshToken -> {
-                    if (refreshTokenService.isTokenExpired(refreshToken)) {
-                        refreshTokenService.delete(refreshToken);
-                        throw new TokenRefreshException(refreshTokenString, "Refresh token was expired. Please make a new signin request");
-                    }
-                    Auth auth = refreshToken.getAuth();
-                    Authentication authentication = new UsernamePasswordAuthenticationToken(
-                            auth.getUsername(),
-                            null,
-                            List.of(new SimpleGrantedAuthority(auth.getRole().name()))
-                    );
-                    String newJwt = jwtUtil.generateToken(authentication);
-                    return new TokenRefreshResponse(newJwt, refreshToken.getToken());
-                });
+    public TokenRefreshResponse refreshAccessToken(String refreshTokenString) {
+        RefreshToken refreshToken = refreshTokenService.findByToken(refreshTokenString)
+                .orElseThrow(() -> new BusinessException(ErrorCode.REFRESH_TOKEN_NOT_FOUND));
+
+        if (refreshTokenService.isTokenExpired(refreshToken)) {
+            refreshTokenService.delete(refreshToken);
+            throw new BusinessException(ErrorCode.REFRESH_TOKEN_EXPIRED);
+        }
+
+        Auth auth = refreshToken.getAuth();
+        User user = userRepository.findByAuth_Id(auth.getId()).orElse(null);
+        CustomUserDetails userDetails = new CustomUserDetails(auth, user);
+        Authentication authentication = new UsernamePasswordAuthenticationToken(
+                userDetails, null, userDetails.getAuthorities()
+        );
+        String newJwt = jwtUtil.generateToken(authentication);
+        return new TokenRefreshResponse(newJwt, refreshToken.getToken());
     }
 }

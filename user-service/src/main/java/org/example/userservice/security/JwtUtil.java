@@ -3,10 +3,6 @@ package org.example.userservice.security;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.security.Keys;
-import org.example.userservice.entity.User;
-import org.example.userservice.repository.AuthRepository;
-import org.example.userservice.repository.UserRepository;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -19,12 +15,6 @@ import java.util.Map;
 
 @Component
 public class JwtUtil {
-
-    @Autowired
-    private AuthRepository authRepository;
-
-    @Autowired
-    private UserRepository userRepository;
 
     @Value("${jwt.secret}")
     private String SECRET_KEY;
@@ -42,18 +32,10 @@ public class JwtUtil {
         Date now = new Date();
         Date expiryDate = new Date(now.getTime() + expirationTime);
 
-        String userId = null;
-        if (userDetails instanceof CustomUserDetails cud && cud.getId() != null) {
-            userId = cud.getId();
-        } else {
-            // Fallback: lookup via DB. Phase 3 will remove this branch entirely.
-            String authId = authRepository.findByUsername(userDetails.getUsername())
-                    .orElseThrow(() -> new RuntimeException("Auth not found for username: " + userDetails.getUsername()))
-                    .getId();
-            User user = userRepository.findByAuth_Id(authId)
-                    .orElseThrow(() -> new RuntimeException("User not found for auth id: " + authId));
-            userId = user.getId();
+        if (!(userDetails instanceof CustomUserDetails cud) || cud.getId() == null) {
+            throw new IllegalStateException("Cannot generate token: userId not available in principal");
         }
+        String userId = cud.getId();
 
         Map<String, Object> claims = new HashMap<>();
         claims.put("sub", userDetails.getUsername());

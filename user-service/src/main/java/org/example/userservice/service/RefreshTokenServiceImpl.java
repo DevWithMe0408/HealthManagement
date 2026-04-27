@@ -29,10 +29,7 @@ public class RefreshTokenServiceImpl implements RefreshTokenService {
 
     @Override
     @Transactional
-    public RefreshToken createRefreshToken(String username) {
-        Auth authUser = authRepository.findByUsername(username)
-                .orElseThrow(() -> new RuntimeException("Error: User not found for refresh token generation."));
-
+    public RefreshToken createRefreshToken(Auth authUser) {
         Optional<RefreshToken> existingTokenOptional = refreshTokenRepository.findByAuth(authUser);
 
         RefreshToken refreshTokenToSave;

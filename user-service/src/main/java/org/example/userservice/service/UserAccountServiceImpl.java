@@ -4,7 +4,8 @@ import org.example.userservice.dto.request.UserRequestDTO;
 import org.example.userservice.dto.response.UserAccountDetailsResponse;
 import org.example.userservice.entity.Auth;
 import org.example.userservice.entity.User;
-import org.example.userservice.exception.ResourceNotFoundException;
+import org.example.userservice.exception.BusinessException;
+import org.example.userservice.exception.ErrorCode;
 import org.example.userservice.repository.AuthRepository;
 import org.example.userservice.repository.UserRepository;
 import org.slf4j.Logger;
@@ -53,7 +54,7 @@ public class UserAccountServiceImpl implements UserAccountService {
 
         Auth auth = updatedUser.getAuth();
         if (auth == null) {
-            throw new ResourceNotFoundException("Auth record not found for user id: " + userId);
+            throw new BusinessException(ErrorCode.USER_NOT_FOUND);
         }
         List<String> roles = Collections.singletonList(auth.getRole().name());
 

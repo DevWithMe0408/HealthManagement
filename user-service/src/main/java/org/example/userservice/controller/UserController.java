@@ -2,11 +2,14 @@ package org.example.userservice.controller;
 
 import lombok.RequiredArgsConstructor;
 import org.example.userservice.dto.request.UserRequestDTO;
+import org.example.userservice.dto.response.DataResponse;
 import org.example.userservice.dto.response.UserAccountDetailsResponse;
 import org.example.userservice.dto.response.UserProfileResponse;
 import org.example.userservice.dto.response.UserResponseDTO;
 import org.example.userservice.entity.Auth;
 import org.example.userservice.entity.User;
+import org.example.userservice.exception.BusinessException;
+import org.example.userservice.exception.ErrorCode;
 import org.example.userservice.mapper.UserMapper;
 import org.example.userservice.repository.UserRepository;
 import org.example.userservice.security.CustomUserDetails;
@@ -22,7 +25,6 @@ import org.springframework.web.bind.annotation.*;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
-import java.util.Optional;
 import java.util.stream.Collectors;
 
 @RestController
@@ -35,16 +37,16 @@ public class UserController {
     private final UserRepository userRepository;
 
     @GetMapping("/allUsers")
-    public ResponseEntity<List<UserResponseDTO>> getAllUsers() {
+    public ResponseEntity<DataResponse<List<UserResponseDTO>>> getAllUsers() {
         List<UserResponseDTO> response = userService.findAll()
                 .stream()
                 .map(userMapper::toDTO)
                 .toList();
-        return ResponseEntity.ok(response);
+        return ResponseEntity.ok(DataResponse.success(response));
     }
 
     @GetMapping("/currentUser")
-    public ResponseEntity<UserProfileResponse> getCurrentUserProfile(
+    public ResponseEntity<DataResponse<UserProfileResponse>> getCurrentUserProfile(
             @RequestHeader(name = "username", required = false) String usernameFromGateway,
             @RequestHeader(name = "userId", required = false) String userIdFromGateway,
             @RequestHeader(name = "userRoles", required = false) String rolesFromGateway) {
@@ -56,10 +58,10 @@ public class UserController {
         if (authentication != null && authentication.isAuthenticated() &&
                 !(authentication.getPrincipal() instanceof String &&
                         authentication.getPrincipal().equals("anonymousUser"))) {
-            if (authentication.getPrincipal() instanceof UserDetails) {
-                username = ((UserDetails) authentication.getPrincipal()).getUsername();
-                if (authentication.getPrincipal() instanceof CustomUserDetails) {
-                    userId = ((CustomUserDetails) authentication.getPrincipal()).getId();
+            if (authentication.getPrincipal() instanceof UserDetails ud) {
+                username = ud.getUsername();
+                if (ud instanceof CustomUserDetails cud) {
+                    userId = cud.getId();
                 }
             } else {
                 username = authentication.getName();
@@ -78,32 +80,27 @@ public class UserController {
         } else {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
-        UserProfileResponse response = new UserProfileResponse(userId, username, roles);
-        return ResponseEntity.ok(response);
+        return ResponseEntity.ok(DataResponse.success(new UserProfileResponse(userId, username, roles)));
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<?> getUserById(@PathVariable String id) {
-        return userService.findById(id)
-                .<ResponseEntity<?>>map(user -> ResponseEntity.ok(userMapper.toDTO(user)))
-                .orElse(ResponseEntity.status(HttpStatus.NOT_FOUND).body("User not found"));
+    public ResponseEntity<DataResponse<UserResponseDTO>> getUserById(@PathVariable String id) {
+        User user = userService.findById(id)
+                .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
+        return ResponseEntity.ok(DataResponse.success(userMapper.toDTO(user)));
     }
 
     @GetMapping("/account-details")
-    public ResponseEntity<UserAccountDetailsResponse> getAccountDetails(
+    public ResponseEntity<DataResponse<UserAccountDetailsResponse>> getAccountDetails(
             @RequestHeader("userId") String userIdFromGateway) {
-        Optional<User> userOpt = userRepository.findById(userIdFromGateway);
-        if (userOpt.isEmpty()) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
-        }
-        User user = userOpt.get();
+        User user = userRepository.findById(userIdFromGateway)
+                .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
         Auth auth = user.getAuth();
         if (auth == null) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+            throw new BusinessException(ErrorCode.USER_NOT_FOUND);
         }
 
         List<String> roles = Collections.singletonList(auth.getRole().name());
-
         UserAccountDetailsResponse response = UserAccountDetailsResponse.builder()
                 .userId(user.getId())
                 .userName(auth.getUsername())
@@ -114,33 +111,26 @@ public class UserController {
                 .birthDate(user.getBirthDate())
                 .gender(user.getGender() != null ? user.getGender() : null)
                 .build();
-        return ResponseEntity.ok(response);
+        return ResponseEntity.ok(DataResponse.success(response));
     }
 
     @PostMapping
-    public ResponseEntity<UserResponseDTO> createUser(@RequestBody UserRequestDTO userDTO) {
+    public ResponseEntity<DataResponse<UserResponseDTO>> createUser(@RequestBody UserRequestDTO userDTO) {
         User user = userMapper.toEntity(userDTO);
         User saved = userService.save(user);
-        return ResponseEntity.status(HttpStatus.CREATED).body(userMapper.toDTO(saved));
+        return ResponseEntity.status(HttpStatus.CREATED).body(DataResponse.success(userMapper.toDTO(saved)));
     }
 
     @PutMapping("/update/{id}")
-    public ResponseEntity<?> updateUser(@PathVariable String id, @RequestBody UserRequestDTO userDTO) {
-        try {
-            User updated = userService.updateUserProfile(id, userMapper.toEntity(userDTO));
-            return ResponseEntity.ok(userMapper.toDTO(updated));
-        } catch (RuntimeException e) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
-        }
+    public ResponseEntity<DataResponse<UserResponseDTO>> updateUser(
+            @PathVariable String id, @RequestBody UserRequestDTO userDTO) {
+        User updated = userService.updateUserProfile(id, userMapper.toEntity(userDTO));
+        return ResponseEntity.ok(DataResponse.success(userMapper.toDTO(updated)));
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<?> deleteUser(@PathVariable String id) {
-        try {
-            userService.deleteUserAndAuthById(id);
-            return ResponseEntity.ok("User and associated auth deleted successfully");
-        } catch (RuntimeException e) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
-        }
+    public ResponseEntity<DataResponse<Void>> deleteUser(@PathVariable String id) {
+        userService.deleteUserAndAuthById(id);
+        return ResponseEntity.ok(DataResponse.success());
     }
 }

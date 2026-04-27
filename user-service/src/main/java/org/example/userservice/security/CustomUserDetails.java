@@ -19,11 +19,13 @@ public class CustomUserDetails implements UserDetails {
 
     private String name;        // user.name
     private String phoneNumber; // user.phone
+    private Auth auth;
 
     /**
      * Constructor used when only Auth is loaded. id stays null until a User is also passed.
      */
     public CustomUserDetails(Auth auth) {
+        this.auth = auth;
         this.username = auth.getUsername();
         this.password = auth.getPassword();
         this.email = auth.getEmail();
@@ -101,5 +103,9 @@ public class CustomUserDetails implements UserDetails {
 
     public String getPhoneNumber() {
         return phoneNumber;
+    }
+
+    public Auth getAuth() {
+        return auth;
     }
 }
