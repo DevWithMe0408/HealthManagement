@@ -46,3 +46,9 @@ eureka:
       defaultZone: http://localhost:8761/eureka/
   instance:
     prefer-ip-address: true
+
+
+logging:
+  level:
+    org.springframework.security: DEBUG
+    org.example.commonsecurity: DEBUG
