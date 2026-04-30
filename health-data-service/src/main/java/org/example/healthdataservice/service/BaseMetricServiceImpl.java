@@ -32,7 +32,7 @@ public class BaseMetricServiceImpl implements BaseMetricService {
 
     @Override
     @Transactional
-    public Optional<BaseMetricValue> saveBaseMetricIfChanged(Long userId, IndicatorType type, Double newValue,
+    public Optional<BaseMetricValue> saveBaseMetricIfChanged(String userId, IndicatorType type, Double newValue,
                                                              Unit unit, LocalDateTime recordedAt) {
 
         if (type.getCategory() != IndicatorCategory.BASE) {
@@ -74,7 +74,7 @@ public class BaseMetricServiceImpl implements BaseMetricService {
     }
 
     @Override
-    public Optional<BaseMetricValue> getLatestBaseMetric(Long userId, IndicatorType type) {
+    public Optional<BaseMetricValue> getLatestBaseMetric(String userId, IndicatorType type) {
         if (type.getCategory() != IndicatorCategory.BASE) {
             log.warn("Attempted to get non-base metric type {} as a base metric.", type);
             return Optional.empty();
@@ -82,7 +82,7 @@ public class BaseMetricServiceImpl implements BaseMetricService {
         return baseMetricValueRepository.findTopByUserIdAndIndicatorTypeOrderByRecordedAtDesc(userId, type);
     }
     @Override
-    public Map<IndicatorType, BaseMetricValue> getLatestBaseMetrics(Long userId, Set<IndicatorType> types) {
+    public Map<IndicatorType, BaseMetricValue> getLatestBaseMetrics(String userId, Set<IndicatorType> types) {
         Map<IndicatorType, BaseMetricValue> latestMetricsMap = new HashMap<>();
         for (IndicatorType type : types) {
             if(type.getCategory() == IndicatorCategory.BASE) {

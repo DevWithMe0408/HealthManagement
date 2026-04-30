@@ -4,7 +4,10 @@ import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.cloud.client.discovery.EnableDiscoveryClient;
 
-@SpringBootApplication
+@SpringBootApplication(scanBasePackages = {
+        "org.example.healthdataservice",
+        "org.example.commonsecurity"   // de scan HeaderAuthenticationFilter
+})
 @EnableDiscoveryClient
 public class HealthDataServiceApplication {
 

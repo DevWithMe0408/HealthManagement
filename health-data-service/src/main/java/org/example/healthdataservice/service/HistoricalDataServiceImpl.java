@@ -29,7 +29,7 @@ public class HistoricalDataServiceImpl implements HistoricalDataService {
     private CalculatedMetricSnapshotRepository calculatedMetricRepo;
 
     @Override
-    public List<HistoricalDataPointDTO> getHistoricalData(Long userId, IndicatorType indicatorType, LocalDateTime fromDate, LocalDateTime toDate, String granularity ) {
+    public List<HistoricalDataPointDTO> getHistoricalData(String userId, IndicatorType indicatorType, LocalDateTime fromDate, LocalDateTime toDate, String granularity ) {
 
         LocalDateTime toDatePlusOneDay = toDate.plusDays(1).withHour(0).withMinute(0).withSecond(0).withNano(0);
         if (fromDate.isAfter(toDate)) {

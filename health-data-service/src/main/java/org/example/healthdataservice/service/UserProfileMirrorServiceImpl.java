@@ -26,7 +26,7 @@ public class UserProfileMirrorServiceImpl implements UserProfileMirrorService{
     }
     @Override
     @Transactional
-    public void saveOrUpdateUserProfile(Long userId, LocalDate birthDate, String genderString) {
+    public void saveOrUpdateUserProfile(String userId, LocalDate birthDate, String genderString) {
         Gender gender = null;
         if (genderString != null && !genderString.isBlank()) {
             try {
@@ -55,7 +55,7 @@ public class UserProfileMirrorServiceImpl implements UserProfileMirrorService{
                 userId, birthDate, gender);
     }
 
-    public void createDefaultUserForHealthData(Long userId) {
+    public void createDefaultUserForHealthData(String userId) {
         // Tạo một bản ghi mặc định cho người dùng mới
         UserForHealthData defaultProfile = new UserForHealthData();
         defaultProfile.setUserId(userId);
@@ -67,7 +67,7 @@ public class UserProfileMirrorServiceImpl implements UserProfileMirrorService{
     }
 
     @Override
-    public Optional<UserForHealthData> getUserProfile(Long userId) {
+    public Optional<UserForHealthData> getUserProfile(String userId) {
         return repository.findById(userId);
     }
 }

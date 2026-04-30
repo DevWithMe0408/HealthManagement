@@ -20,16 +20,16 @@ public interface BaseMetricService {
      * @return BaseMetricValue đã được lưu (nếu có thay đổi), hoặc Optional.empty() nếu không có thay đổi.
      */
 
-    Optional<BaseMetricValue> saveBaseMetricIfChanged(Long userId, IndicatorType type, Double newValue, Unit unit, LocalDateTime recordedAt);
+    Optional<BaseMetricValue> saveBaseMetricIfChanged(String userId, IndicatorType type, Double newValue, Unit unit, LocalDateTime recordedAt);
 
     /**
      * Lấy giá trị mới nhất của một chỉ số cơ bản cho người dùng.
      */
-    Optional<BaseMetricValue> getLatestBaseMetric(Long userId, IndicatorType type);
+    Optional<BaseMetricValue> getLatestBaseMetric(String userId, IndicatorType type);
 
     /**
      * Lấy map các giá trị mới nhất của một tập hợp các chỉ số cơ bản cho người dùng.
      * Key là IndicatorType, Value là BaseMetricValue.
      */
-    Map<IndicatorType, BaseMetricValue> getLatestBaseMetrics(Long userId, Set<IndicatorType> types);
+    Map<IndicatorType, BaseMetricValue> getLatestBaseMetrics(String userId, Set<IndicatorType> types);
 }

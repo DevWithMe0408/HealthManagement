@@ -15,10 +15,10 @@ import java.util.Optional;
 @Repository
 public interface BaseMetricValueRepository extends JpaRepository<BaseMetricValue, Long> {
     // Tìm bản ghi mới nhất của một loại chỉ số cơ bản cho một user
-    Optional<BaseMetricValue> findTopByUserIdAndIndicatorTypeOrderByRecordedAtDesc(Long userId, IndicatorType indicatorType);
+    Optional<BaseMetricValue> findTopByUserIdAndIndicatorTypeOrderByRecordedAtDesc(String userId, IndicatorType indicatorType);
 
     // Lấy tất cả các giá trị cơ bản cho một user tại một thời điểm hoặc mới nhất
-    List<BaseMetricValue> findByUserIdOrderByRecordedAtDesc(Long userId);
+    List<BaseMetricValue> findByUserIdOrderByRecordedAtDesc(String userId);
 
     // Native query để lấy giá trị cuối cùng theo ngày
     @Query(value = "WITH RankedMetrics AS (" +
@@ -31,7 +31,7 @@ public interface BaseMetricValueRepository extends JpaRepository<BaseMetricValue
             ") " +
             "SELECT rm.recorded_at as timestamp, rm.value, rm.unit_code as unitCode " +
             "FROM RankedMetrics rm WHERE rm.rn = 1 ORDER BY rm.recorded_at ASC", nativeQuery = true)
-    List<Object[]> findLastDailyBaseMetrics(@Param("userId") Long userId,
+    List<Object[]> findLastDailyBaseMetrics(@Param("userId") String userId,
                                             @Param("indicatorType") String indicatorType, // Truyền String vì native query
                                             @Param("fromDate") LocalDateTime fromDate,
                                             @Param("toDatePlusOneDay") LocalDateTime toDatePlusOneDay);
@@ -48,7 +48,7 @@ public interface BaseMetricValueRepository extends JpaRepository<BaseMetricValue
             ") " +
             "SELECT rm.recorded_at as timestamp, rm.value, rm.unit_code as unitCode " +
             "FROM RankedMetrics rm WHERE rm.rn = 1 ORDER BY rm.recorded_at ASC", nativeQuery = true)
-    List<Object[]> findLastWeeklyBaseMetrics(@Param("userId") Long userId,
+    List<Object[]> findLastWeeklyBaseMetrics(@Param("userId") String userId,
                                              @Param("indicatorType") String indicatorType,
                                              @Param("fromDate") LocalDateTime fromDate,
                                              @Param("toDatePlusOneDay") LocalDateTime toDatePlusOneDay);
@@ -64,7 +64,7 @@ public interface BaseMetricValueRepository extends JpaRepository<BaseMetricValue
             ") " +
             "SELECT rm.recorded_at as timestamp, rm.value, rm.unit_code as unitCode " +
             "FROM RankedMetrics rm WHERE rm.rn = 1 ORDER BY rm.recorded_at ASC", nativeQuery = true)
-    List<Object[]> findLastMonthlyBaseMetrics(@Param("userId") Long userId,
+    List<Object[]> findLastMonthlyBaseMetrics(@Param("userId") String userId,
                                               @Param("indicatorType") String indicatorType,
                                               @Param("fromDate") LocalDateTime fromDate,
                                               @Param("toDatePlusOneDay") LocalDateTime toDatePlusOneDay);
@@ -75,7 +75,7 @@ public interface BaseMetricValueRepository extends JpaRepository<BaseMetricValue
             "WHERE bmv.userId = :userId AND bmv.indicatorType = :indicatorType " +
             "  AND bmv.recordedAt >= :fromDate AND bmv.recordedAt < :toDatePlusOneDay " +
             "ORDER BY bmv.recordedAt ASC")
-    List<HistoricalDataPointDTO> findAllBaseMetricsInDateRange(@Param("userId") Long userId,
+    List<HistoricalDataPointDTO> findAllBaseMetricsInDateRange(@Param("userId") String userId,
                                                                @Param("indicatorType") IndicatorType indicatorType, // JPQL có thể dùng ENUM
                                                                @Param("fromDate") LocalDateTime fromDate,
                                                                @Param("toDatePlusOneDay") LocalDateTime toDatePlusOneDay);

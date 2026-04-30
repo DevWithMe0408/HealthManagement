@@ -9,14 +9,14 @@ import java.util.List;
 import java.util.Optional;
 @Repository
 public interface HealthIndicatorConfigsRepository extends JpaRepository<HealthIndicatorConfigs,Long> {
-    Optional<HealthIndicatorConfigs> findByIndicatorTypeAndUserId(IndicatorType indicatorType, Long userId);
+    Optional<HealthIndicatorConfigs> findByIndicatorTypeAndUserId(IndicatorType indicatorType, String userId);
 
     Optional<HealthIndicatorConfigs> findByIndicatorType(IndicatorType indicatorType);
 
-    List<HealthIndicatorConfigs> findByUserIdAndIsActiveTrue(Long userId);
+    List<HealthIndicatorConfigs> findByUserIdAndIsActiveTrue(String userId);
 
     Optional<HealthIndicatorConfigs> getByIndicatorType(IndicatorType indicatorType);
 
-    boolean existsByUserId(Long userId);
+    boolean existsByUserId(String userId);
 
 }

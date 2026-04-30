@@ -1,13 +1,15 @@
 package org.example.userservice.repository;
 
-import org.example.userservice.entity.RefreshToken;
 import org.example.userservice.entity.Auth;
+import org.example.userservice.entity.RefreshToken;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
 import java.util.Optional;
+
 @Repository
-public interface RefreshTokenRepository extends JpaRepository<RefreshToken,Long> {
+public interface RefreshTokenRepository extends JpaRepository<RefreshToken, String> {
+
     Optional<RefreshToken> findByToken(String token);
 
     Optional<RefreshToken> findByAuth(Auth auth);
@@ -15,5 +17,4 @@ public interface RefreshTokenRepository extends JpaRepository<RefreshToken,Long>
     void deleteByAuth(Auth auth);
 
     void delete(RefreshToken refreshToken);
-
 }

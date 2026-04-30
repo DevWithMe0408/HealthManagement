@@ -14,7 +14,7 @@ import java.util.List;
 @AllArgsConstructor
 @Builder
 public class UserAccountDetailsResponse {
-    private Long userId;
+    private String userId;
     private String userName;
     private String email;
     private List<String> roles;

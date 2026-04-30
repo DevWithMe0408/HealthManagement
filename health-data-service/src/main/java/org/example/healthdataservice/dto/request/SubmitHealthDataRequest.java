@@ -9,7 +9,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class SubmitHealthDataRequest {
-    private Long userId;
+    private String userId;
     private Double height;
     private Double weight;
     private Double waist;

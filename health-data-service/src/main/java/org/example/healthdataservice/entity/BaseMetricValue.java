@@ -19,8 +19,8 @@ public class BaseMetricValue {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "user_id", nullable = false)
-    private Long userId; // Tham chiếu logic tới User ID từ User Service
+    @Column(name = "user_id", nullable = false, length = 36)
+    private String userId;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "indicator_type", nullable = false)
