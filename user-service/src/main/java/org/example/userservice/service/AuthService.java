@@ -9,8 +9,21 @@ public interface AuthService {
      boolean existsByUsername(String username);
      boolean existsByEmail(String email);
      Auth save(Auth user);
+
+     /**
+      * Register a new user
+      * @param request
+      */
      void registerUser(RegisterRequest request);
+     /**
+      * Login a user
+      * @param request
+      */
      TokenRefreshResponse loginUser(LoginRequest request);
+     /**
+      * Refresh access token using refresh token
+      * @param refreshTokenString
+      */
      TokenRefreshResponse refreshAccessToken(String refreshTokenString);
 
 }
