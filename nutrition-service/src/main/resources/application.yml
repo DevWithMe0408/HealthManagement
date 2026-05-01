@@ -13,12 +13,18 @@ spring:
 
   jpa:
     hibernate:
-      ddl-auto: update # không phá schema cũ
+      ddl-auto: update
     show-sql: true
+    defer-datasource-initialization: true
     properties:
       hibernate:
         dialect: org.hibernate.dialect.MySQL8Dialect
         format_sql: true
+
+  sql:
+    init:
+      mode: always
+      data-locations: classpath:db/data.sql
 
 eureka:
   client:
