@@ -9,8 +9,8 @@ import org.example.userservice.entity.Auth;
 import org.example.userservice.entity.RefreshToken;
 import org.example.userservice.entity.User;
 import org.example.userservice.enums.Role;
-import org.example.userservice.exception.BusinessException;
-import org.example.userservice.exception.ErrorCode;
+import org.example.web.exception.BusinessException;
+import org.example.web.exception.ErrorCode;
 import org.example.userservice.repository.AuthRepository;
 import org.example.userservice.repository.UserRepository;
 import org.example.userservice.security.CustomUserDetails;
@@ -140,7 +140,7 @@ public class AuthServiceImpl implements AuthService {
     @Override
     public TokenRefreshResponse refreshAccessToken(String refreshTokenString) {
         RefreshToken refreshToken = refreshTokenService.findByToken(refreshTokenString)
-                .orElseThrow(() -> new BusinessException(ErrorCode.REFRESH_TOKEN_NOT_FOUND));
+                .orElseThrow(() -> new BusinessException(ErrorCode.REFRESH_TOKEN_INVALID));
 
         if (refreshTokenService.isTokenExpired(refreshToken)) {
             refreshTokenService.delete(refreshToken);

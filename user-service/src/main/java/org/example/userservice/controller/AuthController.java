@@ -5,7 +5,7 @@ import lombok.RequiredArgsConstructor;
 import org.example.userservice.dto.request.LoginRequest;
 import org.example.userservice.dto.request.RegisterRequest;
 import org.example.userservice.dto.request.TokenRefreshRequest;
-import org.example.userservice.dto.response.DataResponse;
+import org.example.web.dto.response.DataResponse;
 import org.example.userservice.dto.response.TokenRefreshResponse;
 import org.example.userservice.service.AuthService;
 import org.springframework.http.ResponseEntity;

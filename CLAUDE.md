@@ -25,7 +25,7 @@ Spring Boot microservices-based Health Management System. Uses Spring Cloud for 
 | discovery-server | 8761 | Eureka service registry |
 | nutrition-service | — | Minimal stub |
 | notification-service | — | Minimal stub |
-| common-events | — | Shared event POJOs (library module) |
+| common | — | Shared event POJOs (library module) |
 
 ## Build Commands
 

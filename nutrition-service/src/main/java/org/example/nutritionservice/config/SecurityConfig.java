@@ -1,7 +1,7 @@
 package org.example.nutritionservice.config;
 
 
-import org.example.commonsecurity.security.HeaderAuthenticationFilter;
+import org.example.security.HeaderAuthenticationFilter;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
@@ -17,23 +17,18 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 public class SecurityConfig {
 
 
-    private final HeaderAuthenticationFilter headerAuthFilter;
-
-    public SecurityConfig(HeaderAuthenticationFilter headerAuthFilter) {
-        this.headerAuthFilter = headerAuthFilter;
-    }
-
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         return http
                 .csrf(csrf -> csrf.disable())
+                .formLogin(form -> form.disable()) //
                 .sessionManagement(s ->
                         s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/actuator/**").permitAll()
                         .anyRequest().authenticated()
                 )
-                .addFilterBefore(headerAuthFilter,
+                .addFilterBefore(new HeaderAuthenticationFilter(),
                         UsernamePasswordAuthenticationFilter.class)
                 .build();
     }

@@ -1,14 +1,18 @@
-package org.example.userservice.dto.response;
+package org.example.web.dto.response;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
+/**
+ * Response wrapper chuan cho moi REST endpoint.
+ * - Success: code = null, message = "Success", data = payload
+ * - Error:   code = error code (vd "AUTH-001"), message = mo ta loi, data = null
+ */
 @Getter
 @NoArgsConstructor
 @AllArgsConstructor
 public class DataResponse<T> {
-
     private static final String SUCCESS_MESSAGE = "Success";
 
     private String code;

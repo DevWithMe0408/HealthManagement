@@ -12,11 +12,7 @@
 	<name>api-gateway</name>
 	<description>API Gateway Service</description>
 
-	<properties>
-		<java.version>17</java.version>
-	</properties>
-
-	<dependencies>
+<dependencies>
 		<!-- API Gateway -->
 		<dependency>
 			<groupId>org.springframework.cloud</groupId>

@@ -6,7 +6,7 @@ import org.springframework.cloud.client.discovery.EnableDiscoveryClient;
 
 @SpringBootApplication(scanBasePackages = {
         "org.example.healthdataservice",
-        "org.example.commonsecurity"   // de scan HeaderAuthenticationFilter
+        "org.example.web"
 })
 @EnableDiscoveryClient
 public class HealthDataServiceApplication {
