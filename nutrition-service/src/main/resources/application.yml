@@ -6,7 +6,7 @@ spring:
     name: nutrition-service
 
   datasource:
-    url: jdbc:mysql://localhost:3306/nutrition_db
+    url: jdbc:mysql://localhost:3306/nutrition_db?zeroDateTimeBehavior=convertToNull
     username: nutrition_user
     password: nutrition_password
     driver-class-name: com.mysql.cj.jdbc.Driver
