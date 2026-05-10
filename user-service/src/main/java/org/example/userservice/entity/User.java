@@ -7,6 +7,7 @@ import lombok.NoArgsConstructor;
 import org.example.userservice.enums.Gender;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "user")
@@ -31,6 +32,8 @@ public class User {
     @OneToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "auth_id", referencedColumnName = "id", nullable = false, unique = true)
     private Auth auth;
+
+    private LocalDateTime createdAt;
 
     private Integer age;
 }
