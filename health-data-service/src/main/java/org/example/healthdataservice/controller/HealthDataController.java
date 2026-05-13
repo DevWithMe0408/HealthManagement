@@ -39,7 +39,10 @@ public class HealthDataController {
     private final HistoricalDataService historicalDataService;
 
     @PostMapping("/submit")
-    public ResponseEntity<String> submitHealthData(@Valid @RequestBody SubmitHealthDataRequest request) {
+    public ResponseEntity<String> submitHealthData(
+            @RequestHeader("userId") String userId,
+            @Valid @RequestBody SubmitHealthDataRequest request) {
+        request.setUserId(userId);
         try {
            log.info("Received health data submisstion for userId: {}", request.getUserId());
            healthDataSubmitService.processSubmittedHealthData(request);

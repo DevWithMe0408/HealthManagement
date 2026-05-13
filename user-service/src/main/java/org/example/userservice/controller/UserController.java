@@ -2,14 +2,14 @@ package org.example.userservice.controller;
 
 import lombok.RequiredArgsConstructor;
 import org.example.userservice.dto.request.UserRequestDTO;
-import org.example.userservice.dto.response.DataResponse;
+import org.example.web.dto.response.DataResponse;
+import org.example.web.exception.BusinessException;
+import org.example.web.exception.ErrorCode;
 import org.example.userservice.dto.response.UserAccountDetailsResponse;
 import org.example.userservice.dto.response.UserProfileResponse;
 import org.example.userservice.dto.response.UserResponseDTO;
 import org.example.userservice.entity.Auth;
 import org.example.userservice.entity.User;
-import org.example.userservice.exception.BusinessException;
-import org.example.userservice.exception.ErrorCode;
 import org.example.userservice.mapper.UserMapper;
 import org.example.userservice.repository.UserRepository;
 import org.example.userservice.security.CustomUserDetails;

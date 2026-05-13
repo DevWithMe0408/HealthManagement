@@ -1,7 +1,6 @@
 package org.example.healthdataservice.config;
 
-import org.example.commonsecurity.security.HeaderAuthenticationFilter;
-import org.springframework.boot.web.servlet.FilterRegistrationBean;
+import org.example.security.HeaderAuthenticationFilter;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;

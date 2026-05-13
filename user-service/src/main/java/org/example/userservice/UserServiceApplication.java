@@ -4,7 +4,10 @@ import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.cloud.client.discovery.EnableDiscoveryClient;
 
-@SpringBootApplication
+@SpringBootApplication(scanBasePackages = {
+        "org.example.userservice",
+        "org.example.web"
+})
 @EnableDiscoveryClient
 public class UserServiceApplication {
 

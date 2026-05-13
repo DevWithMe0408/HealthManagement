@@ -6,7 +6,7 @@ spring:
     name: nutrition-service
 
   datasource:
-    url: jdbc:mysql://localhost:3306/nutrition_db
+    url: jdbc:mysql://localhost:3306/nutrition_db?zeroDateTimeBehavior=convertToNull
     username: nutrition_user
     password: nutrition_password
     driver-class-name: com.mysql.cj.jdbc.Driver
@@ -15,10 +15,16 @@ spring:
     hibernate:
       ddl-auto: update
     show-sql: true
+    defer-datasource-initialization: true
     properties:
       hibernate:
         dialect: org.hibernate.dialect.MySQL8Dialect
         format_sql: true
+
+  sql:
+    init:
+      mode: always
+      data-locations: classpath:db/data.sql
 
 eureka:
   client:
