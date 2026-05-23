@@ -15,6 +15,9 @@ import java.math.BigDecimal;
 @AllArgsConstructor
 @Builder
 public class DishCandidate {
+    /**
+     * Ứng viên + base macro, đã filter
+     */
 
     private Dish dish;
     private BigDecimal baseKcal;

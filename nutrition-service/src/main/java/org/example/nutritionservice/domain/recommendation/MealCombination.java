@@ -13,6 +13,9 @@ import java.util.List;
 @AllArgsConstructor
 @Builder
 public class MealCombination {
+    /**
+     * tổ hợp dishes + servings + scores
+     */
 
     private List<DishWithServing> dishes;
     private MealActual actual;

@@ -18,16 +18,16 @@ public class SystemConfig {
 
     @Id
     @Column(name = "config_key", length = 100)
-    private String configKey;
+    private String configKey; // mã cấu hình
 
     @Column(name = "config_value", length = 500, nullable = false)
-    private String configValue;
+    private String configValue; // Giá trị cấu hình
 
     @Column(name = "value_type", length = 20, nullable = false)
     private String valueType;        // DECIMAL, INT, JSON_ARRAY, BOOLEAN
 
     @Column(length = 255)
-    private String description;
+    private String description; // Mô tả cấu hình
 
     @Column(nullable = false)
     private Boolean editable = true;

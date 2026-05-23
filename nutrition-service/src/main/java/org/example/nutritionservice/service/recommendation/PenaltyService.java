@@ -19,6 +19,9 @@ import java.util.Set;
 @Service
 @Slf4j
 public class PenaltyService {
+    /**
+     * Tính penalty 3 lớp + favorite discount
+     */
 
     private static final int FINAL_SCALE = 2;
 

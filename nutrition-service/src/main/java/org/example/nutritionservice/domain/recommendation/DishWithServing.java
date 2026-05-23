@@ -12,6 +12,9 @@ import java.math.BigDecimal;
 @AllArgsConstructor
 @Builder
 public class DishWithServing {
+    /**
+     * Dishcandidate + Serving multiplier
+     */
 
     private DishCandidate candidate;
     private BigDecimal servingMultiplier;

@@ -32,6 +32,10 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 @Builder
 public class MealLogDish {
+    /**
+     * Lich su moi mon an duoc de xuat
+     * 1 row = 1 dish trong 1 bua
+     */
 
     @Id
     @UuidGenerator
@@ -42,27 +46,27 @@ public class MealLogDish {
     private String mealLogId;
 
     @Column(name = "dish_id", nullable = false, length = 36)
-    private String dishId;
+    private String dishId; // FK voi bang dish
 
     @Enumerated(EnumType.STRING)
     @Column(name = "food_group_code", nullable = false, length = 20, columnDefinition = "VARCHAR(20)")
-    private FoodGroup foodGroupCode;
+    private FoodGroup foodGroupCode; // Nhom thuc pham
 
     @Enumerated(EnumType.STRING)
     @Column(name = "slot_code", nullable = false, length = 20, columnDefinition = "VARCHAR(20)")
-    private SlotCode slotCode;
+    private SlotCode slotCode; // Vi tri - slot cua mon trong thuc don
 
     @Column(name = "serving_multiplier", nullable = false, precision = 3, scale = 2)
-    private BigDecimal servingMultiplier;
+    private BigDecimal servingMultiplier; // khau phan = 0.5 -> 2.0
 
     @Column(name = "actual_grams", nullable = false, precision = 6, scale = 2)
-    private BigDecimal actualGrams;
+    private BigDecimal actualGrams; // Khoi luong thuc te cua mon an = base_serving × serving_multiplier (compute va luu san)
 
     @Column(name = "dish_kcal", nullable = false, precision = 6, scale = 2)
-    private BigDecimal dishKcal;
+    private BigDecimal dishKcal; // Kcal cua rieng mon nay bua an
 
     @Column(name = "sort_order", nullable = false)
-    private Short sortOrder;
+    private Short sortOrder; // Thu tu hien thi trong bua
 
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)

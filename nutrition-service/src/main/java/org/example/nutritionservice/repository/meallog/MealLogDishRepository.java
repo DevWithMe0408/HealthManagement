@@ -9,4 +9,6 @@ import java.util.List;
 public interface MealLogDishRepository extends JpaRepository<MealLogDish, String> {
 
     List<MealLogDish> findByMealLogIdIn(Collection<String> mealLogIds);
+
+    void deleteByMealLogId(String mealLogId);
 }

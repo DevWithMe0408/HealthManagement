@@ -41,6 +41,10 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
 public class RecommendationOrchestrator {
+    /**
+     * orchestrate luồng full-day theo §4
+     * Đề xuất dựa trên thời điểm sử dụng
+     */
 
     private final ConfigLoaderService configLoaderService;
     private final MacroCalculator macroCalculator;

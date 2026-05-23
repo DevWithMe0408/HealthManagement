@@ -28,9 +28,9 @@ HeaderAuthenticationFilter extends OncePerRequestFilter {
     protected void doFilterInternal(HttpServletRequest req,
                                     HttpServletResponse res,
                                     FilterChain chain) throws ServletException, IOException {
-        String userId   = req.getHeader("userId");
-        String username = req.getHeader("username");
-        String roles    = req.getHeader("userRoles");
+        String userId   = firstHeader(req, "X-User-Id", "userId");
+        String username = firstHeader(req, "X-Username", "username");
+        String roles    = firstHeader(req, "X-Roles", "userRoles");
 
         if (userId != null && username != null && roles != null) {
             List<SimpleGrantedAuthority> authorities = List.of(new SimpleGrantedAuthority(roles));
@@ -44,5 +44,10 @@ HeaderAuthenticationFilter extends OncePerRequestFilter {
         }
 
         chain.doFilter(req, res);
+    }
+
+    private String firstHeader(HttpServletRequest req, String preferredName, String fallbackName) {
+        String value = req.getHeader(preferredName);
+        return value != null ? value : req.getHeader(fallbackName);
     }
 }

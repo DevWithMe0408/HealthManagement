@@ -15,6 +15,9 @@ import java.util.Map;
 @AllArgsConstructor
 @Builder
 public class UserContext {
+    /**
+     * input của 1 lần dề xuất
+     */
 
     private String userId;
     private BigDecimal tdee;

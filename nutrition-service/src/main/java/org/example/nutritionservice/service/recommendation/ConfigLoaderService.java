@@ -35,29 +35,25 @@ public class ConfigLoaderService {
     private final SystemConfigRepository systemConfigRepository;
     private final ObjectMapper objectMapper;
 
+    // Load các config về pojo, in-memory
     public LoadedConfigs loadForRecommendation(String goalCode, String planType) {
         List<SystemConfig> systemConfigs = systemConfigRepository.findAll();
         Map<String, String> rawSystemConfigs = systemConfigs.stream()
                 .collect(Collectors.toMap(SystemConfig::getConfigKey, SystemConfig::getConfigValue));
 
         return LoadedConfigs.builder()
-                .goalConfig(goalConfigRepository.findById(goalCode)
-                        .orElseThrow(() -> new BusinessException(ErrorCode.CONFIG_NOT_FOUND)))
+                .goalConfig(goalConfigRepository.findById(goalCode).orElseThrow(() -> new BusinessException(ErrorCode.CONFIG_NOT_FOUND)))
                 .mealRatios(mealRatioConfigRepository.findByPlanTypeOrderBySortOrderAsc(planType))
-                .slotConfigs(slotConfigRepository.findAll().stream()
-                        .collect(Collectors.toMap(
+                .slotConfigs(slotConfigRepository.findAll().stream().collect(Collectors.toMap(
                                 slot -> SlotCode.valueOf(slot.getSlotCode()),
                                 slot -> slot,
                                 (first, second) -> first,
                                 LinkedHashMap::new
                         )))
                 .penaltyConfigs(toPenaltyMap(penaltyConfigRepository.findAll()))
-                .surplusPenalty(surplusPenaltyConfigRepository.findAll().stream()
-                        .collect(Collectors.toMap(config -> config.getMacroCode(), config -> config.getFactor())))
+                .surplusPenalty(surplusPenaltyConfigRepository.findAll().stream().collect(Collectors.toMap(config -> config.getMacroCode(), config -> config.getFactor())))
                 .systemConfigs(rawSystemConfigs)
-                .decimalArrayConfigs(systemConfigs.stream()
-                        .filter(config -> "JSON_ARRAY".equals(config.getValueType()))
-                        .collect(Collectors.toMap(SystemConfig::getConfigKey, this::parseDecimalArray)))
+                .decimalArrayConfigs(systemConfigs.stream().filter(config -> "JSON_ARRAY".equals(config.getValueType())).collect(Collectors.toMap(SystemConfig::getConfigKey, this::parseDecimalArray)))
                 .build();
     }
 

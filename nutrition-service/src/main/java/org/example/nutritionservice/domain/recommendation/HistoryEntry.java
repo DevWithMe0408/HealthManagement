@@ -14,6 +14,9 @@ import java.time.LocalDate;
 @AllArgsConstructor
 @Builder
 public class HistoryEntry {
+    /**
+     * 1 dish trong lịch sử, dùng cho penalty
+     */
 
     private LocalDate mealDate;
     private String dishId;

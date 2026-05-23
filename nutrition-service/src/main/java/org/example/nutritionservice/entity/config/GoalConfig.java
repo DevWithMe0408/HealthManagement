@@ -32,7 +32,7 @@ public class GoalConfig {
 
     // ===== He so deficit/surplus =====
     @Column(name = "cal_multiplier", precision = 3, scale = 2, nullable = false)
-    private BigDecimal calMultiplier;
+    private BigDecimal calMultiplier; // he so nhan
 
     // ===== Ty le macro (tong = 1.00) =====
     @Column(name = "protein_ratio", precision = 3, scale = 2, nullable = false)

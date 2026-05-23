@@ -38,7 +38,7 @@ spring:
         - id: nutrition-service
           uri: lb://nutrition-service
           predicates:
-            - Path=/api/nutrition/**
+            - Path=/api/nutrition/**,/api/recommendation/**,/api/meal-log/**,/api/favorite-dishes/**
           filters:
             - name: JwtFilter
               args: { }

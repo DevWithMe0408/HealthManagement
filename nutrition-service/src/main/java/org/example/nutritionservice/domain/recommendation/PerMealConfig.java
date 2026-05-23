@@ -12,7 +12,7 @@ import org.example.nutritionservice.entity.catalog.SlotCode;
 @Builder
 public class PerMealConfig {
 
-    private MealKind mealKind;
+    private MealKind mealKind; // Loại bữa COMBO/NHIEU_MON
     private Integer nMain;
     private Integer nRau;
     private Integer nCarb;

@@ -37,6 +37,10 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 @Builder
 public class MealLog {
+    /**
+     * Lich su moi bua an duoc de xuat
+     * 1 row = 1 bua cua user trong 1 ngay
+     */
 
     @Id
     @UuidGenerator
@@ -44,38 +48,38 @@ public class MealLog {
     private String id;
 
     @Column(name = "user_id", nullable = false, length = 36)
-    private String userId;
+    private String userId; // lay tu User-id tu header
 
     @Column(name = "meal_date", nullable = false)
-    private LocalDate mealDate;
+    private LocalDate mealDate; // Ngay lich cua bua an
 
     @Enumerated(EnumType.STRING)
     @Column(name = "meal_type", nullable = false, length = 20, columnDefinition = "VARCHAR(20)")
-    private MealType mealType;
+    private MealType mealType; // loai bua an - SANG/PHU_SANG/TRUA/PHU_CHIEU/TOI
 
     @Column(name = "plan_type", nullable = false, length = 10)
-    private String planType;
+    private String planType; // 3_BUA/5_BUA
 
     @Column(name = "goal_code", nullable = false, length = 20)
-    private String goalCode;
+    private String goalCode; // GIAM/DUY_TRI/TANG
 
     @Column(name = "meal_kcal_target", nullable = false, precision = 7, scale = 2)
-    private BigDecimal mealKcalTarget;
+    private BigDecimal mealKcalTarget; // Luong kcal muc tieu
 
     @Column(name = "total_kcal_actual", nullable = false, precision = 7, scale = 2)
-    private BigDecimal totalKcalActual;
+    private BigDecimal totalKcalActual; // Tong kcal thuc te cua to hop duoc chon
 
     @Column(name = "total_protein_g", nullable = false, precision = 6, scale = 2)
-    private BigDecimal totalProteinG;
+    private BigDecimal totalProteinG; // Tong protein cua to hop
 
     @Column(name = "total_fat_g", nullable = false, precision = 6, scale = 2)
-    private BigDecimal totalFatG;
+    private BigDecimal totalFatG; // Tong fat
 
     @Column(name = "total_carb_g", nullable = false, precision = 6, scale = 2)
-    private BigDecimal totalCarbG;
+    private BigDecimal totalCarbG; // Tong carb
 
     @Column(name = "final_score", nullable = false, precision = 5, scale = 2)
-    private BigDecimal finalScore;
+    private BigDecimal finalScore; // Diem so cuoi cung cua to hop
 
     @Enumerated(EnumType.STRING)
     @Column(

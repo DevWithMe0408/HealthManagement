@@ -19,12 +19,21 @@ public class ScoringService {
     private static final BigDecimal SKIP_TARGET_THRESHOLD = new BigDecimal("2");
     private static final BigDecimal SCORE_SCALE = new BigDecimal("100");
 
+    /**
+     * Tính Macro Score
+     * @param actual lượng macro thực tế của bữa ăn
+     * @param target lượng macro mục tiêu
+     * @param goalConfig cấu hình theo từng mục tiêu
+     * @param configs
+     * @return
+     */
     public BigDecimal computeMacroScore(
             MealActual actual,
             MacroTarget target,
             GoalConfig goalConfig,
             LoadedConfigs configs) {
-        BigDecimal threshold = configs.getDecimal("score.threshold");
+
+        BigDecimal threshold = configs.getDecimal("score.threshold");// Lấy ngưỡng sai lệch cho phép
         Map<MacroCode, BigDecimal> targets = valuesOf(target);
         Map<MacroCode, BigDecimal> actuals = valuesOf(actual);
         Map<MacroCode, BigDecimal> weights = weightsOf(goalConfig);
@@ -32,49 +41,61 @@ public class ScoringService {
 
         BigDecimal skippedWeight = BigDecimal.ZERO;
         int remainingCount = 0;
+        // Vòng gặp qua từng Macro -> Nếu target của macro nhỏ hơn 2 thì bỏ qua Macro đó
         for (MacroCode macro : MacroCode.values()) {
             if (targets.get(macro).compareTo(SKIP_TARGET_THRESHOLD) < 0) {
                 skippedWeight = skippedWeight.add(weights.get(macro));
                 weights.put(macro, BigDecimal.ZERO);
                 continue;
             }
+            // Tính điểm từng macro còn lại
             remainingCount++;
             scores.put(macro, scoreFor(macro, actuals.get(macro), targets.get(macro), threshold, configs));
         }
 
+        // Trường hợp tất cả macro đều bị bỏ qua -> Không có target đủ lớn để đánh giá
         if (remainingCount == 0) {
             return SCORE_SCALE.setScale(FINAL_SCALE, RoundingMode.HALF_UP);
         }
 
+        // Phân phối lại trọng số của macro bị bỏ qua -> Chia đều cho các macro còn lại
         BigDecimal redistributed = skippedWeight.divide(
                 BigDecimal.valueOf(remainingCount),
                 CALC_SCALE,
                 RoundingMode.HALF_UP
         );
+        // Tổng điểm
         BigDecimal total = BigDecimal.ZERO;
-        BigDecimal adjustedWeightTotal = BigDecimal.ZERO;
+        BigDecimal adjustedWeightTotal = BigDecimal.ZERO; // Tổng trọng số sau điều chỉnh
         for (MacroCode macro : MacroCode.values()) {
-            if (!scores.containsKey(macro)) {
+            if (!scores.containsKey(macro)) { // Bỏ qua các macro bị skip
                 continue;
             }
-            BigDecimal adjustedWeight = weights.get(macro).add(redistributed);
+            BigDecimal adjustedWeight = weights.get(macro).add(redistributed); // Trọng số gốc + phân trọng số chia lại
             adjustedWeightTotal = adjustedWeightTotal.add(adjustedWeight);
-            total = total.add(adjustedWeight.multiply(scores.get(macro)));
+            total = total.add(adjustedWeight.multiply(scores.get(macro))); // total += adjustedWeight * score
         }
 
+        // finalScore = total / adjustedWeightTotal * 100
         return total.divide(adjustedWeightTotal, CALC_SCALE, RoundingMode.HALF_UP)
                 .multiply(SCORE_SCALE)
                 .setScale(FINAL_SCALE, RoundingMode.HALF_UP);
     }
 
+    // Hàm tính điểm riêng cho Macro đó
     private BigDecimal scoreFor(
             MacroCode macro,
             BigDecimal actual,
             BigDecimal target,
             BigDecimal threshold,
             LoadedConfigs configs) {
+
+        // Tính độ lệch so với target
         BigDecimal deviation = actual.subtract(target).abs()
                 .divide(target, CALC_SCALE, RoundingMode.HALF_UP);
+
+        // Vượt target -> Nhân penalty -> Lấy trọng số phạt trong cấu hình
+        // deviation = deviation * surplusPenalty[macro]
         if (actual.compareTo(target) > 0) {
             deviation = deviation.multiply(configs.getSurplusPenalty().get(macro.configKey()));
         }
@@ -84,6 +105,7 @@ public class ScoringService {
         return score.max(BigDecimal.ZERO);
     }
 
+    // Chuyển MacroTarget thành dạng map
     private Map<MacroCode, BigDecimal> valuesOf(MacroTarget target) {
         Map<MacroCode, BigDecimal> values = new EnumMap<>(MacroCode.class);
         values.put(MacroCode.PROTEIN, target.getProteinG());
@@ -93,6 +115,7 @@ public class ScoringService {
         return values;
     }
 
+    // Chuyển MealActual thành dạng map -> Tại sao không gộp 2 hàm vào làm 1 ?
     private Map<MacroCode, BigDecimal> valuesOf(MealActual actual) {
         Map<MacroCode, BigDecimal> values = new EnumMap<>(MacroCode.class);
         values.put(MacroCode.PROTEIN, actual.getProteinG());
@@ -102,6 +125,7 @@ public class ScoringService {
         return values;
     }
 
+    // Chuyển trọng số từ GoalConfig thành dạng map
     private Map<MacroCode, BigDecimal> weightsOf(GoalConfig goalConfig) {
         Map<MacroCode, BigDecimal> weights = new EnumMap<>(MacroCode.class);
         weights.put(MacroCode.PROTEIN, goalConfig.getWeightP());

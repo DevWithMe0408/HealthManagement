@@ -13,6 +13,7 @@ import org.example.nutritionservice.domain.recommendation.PerMealConfig;
 import org.example.nutritionservice.domain.recommendation.UserContext;
 import org.example.nutritionservice.entity.catalog.SlotCode;
 import org.example.nutritionservice.entity.config.SlotConfig;
+import org.example.nutritionservice.exception.RecommendationTooComplexException;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
@@ -29,6 +30,9 @@ import java.util.Set;
 @RequiredArgsConstructor
 @Slf4j
 public class BruteForceEngine {
+    /**
+     * Sinh tổ hợp + serving grid + sort top K
+     */
 
     private static final long MAX_WORK_UNITS = 50_000_000L;
     private static final int CALC_SCALE = 4;
@@ -52,7 +56,7 @@ public class BruteForceEngine {
         long estimatedWork = estimateWork(mealTarget.getPerMealConfig(), candidatesPerSlot, configs);
         log.debug("Recommendation mealType={} estimatedWork={}", mealTarget.getMealType(), estimatedWork);
         if (!userCtx.isForceCompute() && estimatedWork > MAX_WORK_UNITS) {
-            throw new IllegalStateException("Cau hinh bua qua phuc tap: " + estimatedWork + " to hop");
+            throw new RecommendationTooComplexException(estimatedWork);
         }
 
         PriorityQueue<MealCombination> topCombinations = new PriorityQueue<>(

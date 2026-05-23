@@ -19,14 +19,15 @@ import java.util.Map;
 @Builder
 public class LoadedConfigs {
 
-    private GoalConfig goalConfig;
-    private List<MealRatioConfig> mealRatios;
-    private Map<SlotCode, SlotConfig> slotConfigs;
-    private Map<Integer, Map<Integer, Integer>> penaltyConfigs;
-    private Map<String, BigDecimal> surplusPenalty;
+    private GoalConfig goalConfig; // 1 goal
+    private List<MealRatioConfig> mealRatios; //ratios cho planType được chọn (ratios cho 3 bữa/5 bữa)
+    private Map<SlotCode, SlotConfig> slotConfigs; // 4 slot (CHINH/RAU/TINH_BOT/COMBO)
+    private Map<Integer, Map<Integer, Integer>> penaltyConfigs; //layer (lớp nào) -> distance (ktg cách bao lâu) -> penalty_value (điểm phạt)
+    private Map<String, BigDecimal> surplusPenalty; //PROTEIN/FAT/CARB/KCAL -> penalty_value khi thừa
     private Map<String, String> systemConfigs;
     private Map<String, List<BigDecimal>> decimalArrayConfigs;
 
+    // convert system_configs string value to BigDecimal
     public BigDecimal getDecimal(String key) {
         return new BigDecimal(systemConfigs.get(key));
     }
@@ -35,6 +36,7 @@ public class LoadedConfigs {
         return Integer.parseInt(systemConfigs.get(key));
     }
 
+    // parse JSON_ARRAY
     public List<BigDecimal> getDecimalArray(String key) {
         return decimalArrayConfigs.getOrDefault(key, List.of());
     }
