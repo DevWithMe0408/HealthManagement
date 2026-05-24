@@ -21,6 +21,7 @@ import java.math.RoundingMode;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.EnumMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.PriorityQueue;
@@ -62,9 +63,11 @@ public class BruteForceEngine {
         PriorityQueue<MealCombination> topCombinations = new PriorityQueue<>(
                 Comparator.comparing(MealCombination::getFinalScore)
         );
+        int internalTopK = Math.max(topK, topK * 5);
         for (List<DishCandidate> dishCombo : buildDishCombinations(
                 mealTarget.getPerMealConfig(),
-                candidatesPerSlot
+                candidatesPerSlot,
+                configs
         )) {
             BigDecimal penalty = penaltyService.computePenalty(
                     dishCombo,
@@ -80,14 +83,40 @@ public class BruteForceEngine {
                     mealTarget,
                     configs,
                     penalty,
-                    topK,
+                    internalTopK,
                     topCombinations
             );
         }
 
-        return topCombinations.stream()
+        List<MealCombination> sortedCombinations = topCombinations.stream()
                 .sorted(Comparator.comparing(MealCombination::getFinalScore).reversed())
                 .toList();
+        Set<String> seenMainKeys = new HashSet<>();
+        List<MealCombination> diverseResults = new ArrayList<>();
+        for (MealCombination combination : sortedCombinations) {
+            String mainKey = extractMainKey(combination);
+            if (!seenMainKeys.add(mainKey)) {
+                continue;
+            }
+            diverseResults.add(combination);
+            if (diverseResults.size() >= topK) {
+                break;
+            }
+        }
+        return diverseResults;
+    }
+
+    /**
+     * Tao key mon chinh de moi nhom chi lay dai dien score cao nhat.
+     */
+    private String extractMainKey(MealCombination combination) {
+        return combination.getDishes().stream()
+                .filter(dish -> dish.getCandidate().getSlotCode() == SlotCode.CHINH
+                        || dish.getCandidate().getSlotCode() == SlotCode.COMBO)
+                .map(dish -> dish.getCandidate().getDishId())
+                .sorted()
+                .reduce((left, right) -> left + "," + right)
+                .orElse("");
     }
 
     private void enumerateServings(
@@ -247,7 +276,8 @@ public class BruteForceEngine {
 
     private List<List<DishCandidate>> buildDishCombinations(
             PerMealConfig perMealConfig,
-            Map<SlotCode, List<DishCandidate>> candidatesPerSlot) {
+            Map<SlotCode, List<DishCandidate>> candidatesPerSlot,
+            LoadedConfigs configs) {
         Map<SlotCode, Integer> counts = requestedCounts(perMealConfig);
         List<List<DishCandidate>> allCombinations = new ArrayList<>();
         allCombinations.add(new ArrayList<>());
@@ -266,7 +296,29 @@ public class BruteForceEngine {
             }
             allCombinations = combined;
         }
+        if (forbidSameFoodGroupInMain(configs)) {
+            allCombinations = allCombinations.stream()
+                    .filter(this::hasDistinctMainFoodGroups)
+                    .toList();
+        }
         return allCombinations;
+    }
+
+    private boolean forbidSameFoodGroupInMain(LoadedConfigs configs) {
+        return Boolean.parseBoolean(
+                configs.getSystemConfigs().getOrDefault("filter.forbid_same_food_group_in_main", "true")
+        );
+    }
+
+    private boolean hasDistinctMainFoodGroups(List<DishCandidate> combination) {
+        Set<org.example.nutritionservice.entity.catalog.FoodGroup> seenGroups = new HashSet<>();
+        for (DishCandidate candidate : combination) {
+            if (candidate.getSlotCode() == SlotCode.CHINH
+                    && !seenGroups.add(candidate.getFoodGroupCode())) {
+                return false;
+            }
+        }
+        return true;
     }
 
     private List<List<DishCandidate>> choose(List<DishCandidate> candidates, int count) {
