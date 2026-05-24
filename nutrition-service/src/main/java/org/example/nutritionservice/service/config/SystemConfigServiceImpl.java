@@ -47,6 +47,7 @@ public class SystemConfigServiceImpl implements SystemConfigService {
                         .servingMax(getDecimal(sysMap, "filter.serving_max"))
                         .servingSteps(parseJsonArray(sysMap, "filter.serving_steps"))
                         .comboServingSteps(parseJsonArray(sysMap, "filter.combo_serving_steps"))
+                        .forbidSameFoodGroupInMain(getBoolean(sysMap, "filter.forbid_same_food_group_in_main"))
                         .build())
                 .constraints(slotConfigs.stream()
                         .map(sc -> SystemConfigResponse.SlotConstraint.builder()
@@ -57,6 +58,7 @@ public class SystemConfigServiceImpl implements SystemConfigService {
                         .toList())
                 .display(SystemConfigResponse.DisplayConfig.builder()
                         .topK(getInt(sysMap, "display.top_k"))
+                        .slotAlternativesCount(getInt(sysMap, "display.slot_alternatives_count"))
                         .roundStepG(getInt(sysMap, "display.round_step_g"))
                         .build())
                 .updatedAt(latestUpdated)
@@ -73,8 +75,10 @@ public class SystemConfigServiceImpl implements SystemConfigService {
         updateKey("filter.serving_max", f.getServingMax().toString(), "DECIMAL", updatedBy);
         updateKey("filter.serving_steps", toJsonArray(f.getServingSteps()), "JSON_ARRAY", updatedBy);
         updateKey("filter.combo_serving_steps", toJsonArray(f.getComboServingSteps()), "JSON_ARRAY", updatedBy);
+        updateKey("filter.forbid_same_food_group_in_main", String.valueOf(f.getForbidSameFoodGroupInMain()), "BOOLEAN", updatedBy);
 
         updateKey("display.top_k", String.valueOf(req.getDisplay().getTopK()), "INT", updatedBy);
+        updateKey("display.slot_alternatives_count", String.valueOf(req.getDisplay().getSlotAlternativesCount()), "INT", updatedBy);
         updateKey("display.round_step_g", String.valueOf(req.getDisplay().getRoundStepG()), "INT", updatedBy);
 
         Map<String, SlotConfig> slotMap = slotConfigRepository.findAll().stream()
@@ -112,6 +116,11 @@ public class SystemConfigServiceImpl implements SystemConfigService {
     private Integer getInt(Map<String, SystemConfig> map, String key) {
         SystemConfig c = map.get(key);
         return c != null ? Integer.parseInt(c.getConfigValue()) : null;
+    }
+
+    private Boolean getBoolean(Map<String, SystemConfig> map, String key) {
+        SystemConfig c = map.get(key);
+        return c != null ? Boolean.parseBoolean(c.getConfigValue()) : null;
     }
 
     private List<BigDecimal> parseJsonArray(Map<String, SystemConfig> map, String key) {

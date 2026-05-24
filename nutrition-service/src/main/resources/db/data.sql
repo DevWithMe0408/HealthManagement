@@ -51,6 +51,7 @@ INSERT IGNORE INTO system_config (config_key, config_value, value_type, descript
 ('filter.serving_max',         '2.00',                          'DECIMAL',    'Muc serving lon nhat',             NOW(), NOW()),
 ('filter.serving_steps',       '[0.5,0.75,1.0,1.5,2.0]',        'JSON_ARRAY', 'Cac muc serving cho mon thuong', NOW(), NOW()),
 ('filter.combo_serving_steps', '[0.75,1.0,1.25,1.5]',           'JSON_ARRAY', 'Cac muc serving cho mon combo',   NOW(), NOW()),
+('filter.forbid_same_food_group_in_main', 'true',               'BOOLEAN',    'Cam cap 2 mon chinh cung food_group khi nMain>=2', NOW(), NOW()),
 ('penalty.cap',                '40',                            'INT',        'Penalty toi da cho 1 to hop',      NOW(), NOW()),
 ('penalty.fav_discount',       '0.5',                           'DECIMAL',    'He so giam penalty cho mon yeu thich', NOW(), NOW()),
 ('penalty.lookback_days',      '3',                             'INT',        'So ngay nhin lai lich su',         NOW(), NOW()),
@@ -58,4 +59,5 @@ INSERT IGNORE INTO system_config (config_key, config_value, value_type, descript
 ('reopt.score_threshold',      '50',                            'INT',        'Goi y khi Final Score < nguong nay', NOW(), NOW()),
 ('reopt.score_drop',           '15',                            'INT',        'Goi y khi score giam > so nay',   NOW(), NOW()),
 ('display.top_k',              '10',                            'INT',        'So to hop hien thi top',           NOW(), NOW()),
+('display.slot_alternatives_count', '10',                       'INT',        'So luong alternatives moi slot trong response', NOW(), NOW()),
 ('display.round_step_g',       '25',                            'INT',        'Lam tron serving (gam)',           NOW(), NOW());

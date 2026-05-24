@@ -46,6 +46,9 @@ public class SystemConfigUpdateRequest {
 
         @NotEmpty
         private List<BigDecimal> comboServingSteps;
+
+        @NotNull
+        private Boolean forbidSameFoodGroupInMain;
     }
 
     @Data
@@ -68,6 +71,11 @@ public class SystemConfigUpdateRequest {
         @Min(5)
         @Max(20)
         private Integer topK;
+
+        @NotNull
+        @Min(1)
+        @Max(20)
+        private Integer slotAlternativesCount;
 
         @NotNull
         @Min(5)

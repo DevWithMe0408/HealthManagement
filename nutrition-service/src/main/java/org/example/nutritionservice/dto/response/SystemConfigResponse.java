@@ -31,6 +31,7 @@ public class SystemConfigResponse {
         private BigDecimal servingMax;
         private List<BigDecimal> servingSteps;
         private List<BigDecimal> comboServingSteps;
+        private Boolean forbidSameFoodGroupInMain;
     }
 
     @Data
@@ -49,6 +50,7 @@ public class SystemConfigResponse {
     @AllArgsConstructor
     public static class DisplayConfig {
         private Integer topK;
+        private Integer slotAlternativesCount;
         private Integer roundStepG;
     }
 }
