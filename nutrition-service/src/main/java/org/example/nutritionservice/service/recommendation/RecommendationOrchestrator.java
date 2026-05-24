@@ -24,7 +24,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
-import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -164,11 +163,10 @@ public class RecommendationOrchestrator {
                 new LinkedHashMap<>();
         for (Map.Entry<SlotCode, BigDecimal> slotTarget : mealTarget.getSlotKcalTargets().entrySet()) {
             int slotCount = mealTarget.getPerMealConfig().countForSlot(slotTarget.getKey());
-            BigDecimal targetPerDish = slotTarget.getValue()
-                    .divide(BigDecimal.valueOf(slotCount), 2, RoundingMode.HALF_UP);
             candidates.put(slotTarget.getKey(), dishFilterService.filterCandidatesForSlot(
                     slotTarget.getKey(),
-                    targetPerDish,
+                    slotTarget.getValue(),
+                    slotCount,
                     configs,
                     dishRepository.findBySlotCodeAndIsActiveTrue(slotTarget.getKey())
             ));

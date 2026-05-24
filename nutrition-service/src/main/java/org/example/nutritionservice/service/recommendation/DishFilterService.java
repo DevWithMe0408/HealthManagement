@@ -12,51 +12,40 @@ import java.util.List;
 
 @Service
 public class DishFilterService {
-    /**
-     * filter ứng viên cho 1 slot
-     * kcal_tolerance - biên chấp nhận của kcal lấy ra
-     * weight constraint - điều kiện cho khối lượng món ăn
-     */
 
     private static final BigDecimal ONE_HUNDRED = new BigDecimal("100");
     private static final int CALC_SCALE = 4;
 
     /**
-     * Filter ứng viên cho từng slot
-     * @param slot Loại của món ăn: CHINH/RAU/TINH_BOT/COMBO/BUA_PHU
-     * @param slotKcalTarget Mức kcal mục tiêu cho slot đó
-     * @param configs cấu hình
-     * @param allActiveDishesInSlot Danh sách món ăn lấy từ DB
-     * @return
+     * Loc ung vien cho slot, chia target theo so mon va noi bien [0.5x, 1.5x].
      */
-
     public List<DishCandidate> filterCandidatesForSlot(
             SlotCode slot,
             BigDecimal slotKcalTarget,
+            int dishesNeededInSlot,
             LoadedConfigs configs,
-            List<Dish> allActiveDishesInSlot)
-    {
-        BigDecimal tolerance = configs.getDecimal("filter.kcal_tolerance"); // Biên độ dao động kcal cho phép
-        BigDecimal minServing = configs.getDecimal("filter.serving_min"); // Hệ số serving nhỏ nhất
-        BigDecimal maxServing = configs.getDecimal("filter.serving_max"); // Hệ sô serving lớn nhất
-        // Tính khoảng kcal chấp nhận được
-        BigDecimal maxAcceptedMin = slotKcalTarget.multiply(BigDecimal.ONE.add(tolerance));
-        BigDecimal minAcceptedMax = slotKcalTarget.multiply(BigDecimal.ONE.subtract(tolerance));
+            List<Dish> allActiveDishesInSlot) {
+        if (dishesNeededInSlot <= 0) {
+            return List.of();
+        }
+
+        BigDecimal minServing = configs.getDecimal("filter.serving_min");
+        BigDecimal maxServing = configs.getDecimal("filter.serving_max");
+        BigDecimal targetPerDish = slotKcalTarget.divide(
+                BigDecimal.valueOf(dishesNeededInSlot),
+                CALC_SCALE,
+                RoundingMode.HALF_UP
+        );
+        BigDecimal lowerBound = targetPerDish.multiply(new BigDecimal("0.5"));
+        BigDecimal upperBound = targetPerDish.multiply(new BigDecimal("1.5"));
 
         return allActiveDishesInSlot.stream()
-                .filter(dish -> dish.getSlotCode() == slot && Boolean.TRUE.equals(dish.getIsActive())) // Món thuộc slot cần lọc && Món active
-                .map(this::toCandidate) // Chuyển Dish thành DishCandidate
-                .filter(candidate -> candidate.getBaseKcal().multiply(minServing).compareTo(maxAcceptedMin) <= 0)// baseKcal * minServing <= target * (1 + tolerance)
-                .filter(candidate -> candidate.getBaseKcal().multiply(maxServing).compareTo(minAcceptedMax) >= 0)// baseKcal * maxServing >= target * (1 - tolerance)
+                .filter(dish -> dish.getSlotCode() == slot && Boolean.TRUE.equals(dish.getIsActive()))
+                .map(this::toCandidate)
+                .filter(candidate -> candidate.getBaseKcal().multiply(minServing).compareTo(upperBound) <= 0)
+                .filter(candidate -> candidate.getBaseKcal().multiply(maxServing).compareTo(lowerBound) >= 0)
                 .toList();
     }
-    // Logic filter cho mỗi dish D:
-    // 1. base_kcal_at_serving = D.kcal_per_100g × D.base_serving_g / 100
-    // 2. kcal_at_min = base_kcal_at_serving × serving_min_multiplier
-    // 3. kcal_at_max = base_kcal_at_serving × serving_max_multiplier
-    // 4. pass = (kcal_at_min ≤ target × 1.15) AND (kcal_at_max ≥ target × 0.85) -> Khi dùng khẩu phần nhỏ nhất, kcal của món không được vượt quá ngưỡng trên, Khi dùng khẩu phần lớn nhất, kcal của món phải đạt ít nhất ngưỡng dưới
-    // 5. weight constraint (§3.6 tuyệt đối): check ở scoring phase, không ở đây
-    //    (vì filter ở đây chỉ loại dish KHÔNG THỂ vừa, sau brute force mới kiểm serving cụ thể)
 
     public DishCandidate toCandidate(Dish dish) {
         BigDecimal baseServingRatio = BigDecimal.valueOf(dish.getBaseServingG())
