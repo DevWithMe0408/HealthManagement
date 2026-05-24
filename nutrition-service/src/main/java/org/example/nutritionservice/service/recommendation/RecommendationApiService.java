@@ -155,7 +155,7 @@ public class RecommendationApiService {
                 .mealType(currentMeal.getMealType())
                 .mealKcalTarget(currentMeal.getMealKcalTarget())
                 .topCombination(updatedCombination)
-                .alternativeCombinations(currentMeal.getAlternativeCombinations())
+                .slotAlternatives(Map.of())
                 .build();
         return SwapResultResponse.builder()
                 .updatedMeal(updatedMeal)
@@ -203,7 +203,7 @@ public class RecommendationApiService {
                 .mealType(meal.getMealTarget().getMealType())
                 .mealKcalTarget(meal.getMealTarget().getMealKcal())
                 .topCombination(combinations.isEmpty() ? null : combinations.get(0))
-                .alternativeCombinations(combinations.size() <= 1 ? List.of() : combinations.subList(1, combinations.size()))
+                .slotAlternatives(Map.of())
                 .build();
     }
 

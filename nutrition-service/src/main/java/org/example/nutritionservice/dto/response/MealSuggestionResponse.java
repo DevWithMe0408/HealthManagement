@@ -10,6 +10,7 @@ import org.example.nutritionservice.entity.meallog.MealType;
 
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.Map;
 
 @Data
 @NoArgsConstructor
@@ -26,5 +27,5 @@ public class MealSuggestionResponse {
     @Valid
     private MealCombinationResponse topCombination;
 
-    private List<@Valid MealCombinationResponse> alternativeCombinations;
+    private Map<String, List<@Valid DishOptionResponse>> slotAlternatives;
 }
