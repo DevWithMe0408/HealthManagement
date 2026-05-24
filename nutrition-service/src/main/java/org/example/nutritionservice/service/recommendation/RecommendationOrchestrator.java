@@ -125,6 +125,7 @@ public class RecommendationOrchestrator {
         );
         return RecommendedMeal.builder()
                 .mealTarget(mealTarget)
+                .candidatesPerSlot(candidates)
                 .combinations(combinations)
                 .build();
     }

@@ -11,10 +11,12 @@ import org.example.nutritionservice.domain.recommendation.MealActual;
 import org.example.nutritionservice.domain.recommendation.MealCombination;
 import org.example.nutritionservice.domain.recommendation.PerMealConfig;
 import org.example.nutritionservice.domain.recommendation.RecommendedMeal;
+import org.example.nutritionservice.domain.recommendation.SlotAlternative;
 import org.example.nutritionservice.domain.recommendation.UserContext;
 import org.example.nutritionservice.dto.request.RecommendFullDayRequest;
 import org.example.nutritionservice.dto.request.SwapDishRequest;
 import org.example.nutritionservice.dto.response.DailyPlanResponse;
+import org.example.nutritionservice.dto.response.DishOptionResponse;
 import org.example.nutritionservice.dto.response.DishSuggestionResponse;
 import org.example.nutritionservice.dto.response.MealCombinationResponse;
 import org.example.nutritionservice.dto.response.MealSuggestionResponse;
@@ -42,6 +44,7 @@ import java.util.ArrayList;
 import java.util.EnumMap;
 import java.util.EnumSet;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -64,6 +67,7 @@ public class RecommendationApiService {
     private final ConfigLoaderService configLoaderService;
     private final MacroCalculator macroCalculator;
     private final DishFilterService dishFilterService;
+    private final BruteForceEngine bruteForceEngine;
     private final ScoringService scoringService;
     private final PenaltyService penaltyService;
     private final FavoriteDishRepository favoriteDishRepository;
@@ -184,30 +188,65 @@ public class RecommendationApiService {
             String planType,
             DailyPlanResponse.WarningResponse warning,
             Set<String> favorites) {
+        LoadedConfigs configs = configLoaderService.loadForRecommendation(goalCode, planType);
         return DailyPlanResponse.builder()
                 .planDate(dailyPlan.getPlanDate())
                 .goalCode(goalCode)
                 .planType(planType)
                 .warning(warning)
                 .meals(dailyPlan.getMeals().stream()
-                        .map(meal -> toMealResponse(meal, favorites))
+                        .map(meal -> toMealResponse(meal, configs, favorites))
                         .toList())
                 .build();
     }
 
-    private MealSuggestionResponse toMealResponse(RecommendedMeal meal, Set<String> favorites) {
-        List<MealCombinationResponse> combinations = meal.getCombinations().stream()
-                .map(combination -> toCombinationResponse(combination, favorites))
-                .toList();
+    private MealSuggestionResponse toMealResponse(
+            RecommendedMeal meal,
+            LoadedConfigs configs,
+            Set<String> favorites) {
+        if (meal.getCombinations().isEmpty()) {
+            return MealSuggestionResponse.builder()
+                    .mealType(meal.getMealTarget().getMealType())
+                    .mealKcalTarget(meal.getMealTarget().getMealKcal())
+                    .topCombination(null)
+                    .slotAlternatives(Map.of())
+                    .build();
+        }
+
+        MealCombination topCombination = meal.getCombinations().get(0);
+        Map<String, List<DishOptionResponse>> slotAlternatives = bruteForceEngine.computeSlotAlternatives(
+                        topCombination,
+                        meal.getCandidatesPerSlot(),
+                        meal.getMealTarget(),
+                        configs
+                )
+                .entrySet()
+                .stream()
+                .collect(Collectors.toMap(
+                        Map.Entry::getKey,
+                        entry -> entry.getValue().stream()
+                                .map(alternative -> toDishOptionResponse(alternative, favorites))
+                                .toList(),
+                        (left, right) -> left,
+                        LinkedHashMap::new
+                ));
         return MealSuggestionResponse.builder()
                 .mealType(meal.getMealTarget().getMealType())
                 .mealKcalTarget(meal.getMealTarget().getMealKcal())
-                .topCombination(combinations.isEmpty() ? null : combinations.get(0))
-                .slotAlternatives(Map.of())
+                .topCombination(toCombinationResponse(topCombination, favorites))
+                .slotAlternatives(slotAlternatives)
                 .build();
     }
 
     private MealCombinationResponse toCombinationResponse(MealCombination combination, Set<String> favorites) {
+        Map<SlotCode, Integer> slotCounter = new EnumMap<>(SlotCode.class);
+        List<DishSuggestionResponse> dishes = new ArrayList<>();
+        for (DishWithServing dish : combination.getDishes()) {
+            SlotCode slotCode = dish.getCandidate().getSlotCode();
+            int slotIndex = slotCounter.getOrDefault(slotCode, 0);
+            slotCounter.put(slotCode, slotIndex + 1);
+            dishes.add(toDishResponse(dish, slotCode.name() + "_" + slotIndex, favorites));
+        }
         return MealCombinationResponse.builder()
                 .totalKcal(combination.getActual().getKcal())
                 .totalProtein(combination.getActual().getProteinG())
@@ -216,14 +255,17 @@ public class RecommendationApiService {
                 .macroScore(combination.getMacroScore())
                 .penalty(combination.getPenalty())
                 .finalScore(combination.getFinalScore())
-                .dishes(combination.getDishes().stream()
-                        .map(dish -> toDishResponse(dish, favorites))
-                        .toList())
+                .dishes(dishes)
                 .build();
     }
 
     private DishSuggestionResponse toDishResponse(DishWithServing dish, Set<String> favorites) {
+        return toDishResponse(dish, null, favorites);
+    }
+
+    private DishSuggestionResponse toDishResponse(DishWithServing dish, String slotKey, Set<String> favorites) {
         return DishSuggestionResponse.builder()
+                .slotKey(slotKey)
                 .dishId(dish.getCandidate().getDishId())
                 .dishName(dish.getCandidate().getDishName())
                 .slotCode(dish.getCandidate().getSlotCode())
@@ -232,6 +274,19 @@ public class RecommendationApiService {
                 .actualGrams(dish.getActualGrams())
                 .dishKcal(dish.getKcal())
                 .favorite(favorites.contains(dish.getCandidate().getDishId()))
+                .build();
+    }
+
+    private DishOptionResponse toDishOptionResponse(SlotAlternative alternative, Set<String> favorites) {
+        return DishOptionResponse.builder()
+                .dishId(alternative.getDishId())
+                .dishName(alternative.getCandidate().getDishName())
+                .slotCode(alternative.getCandidate().getSlotCode())
+                .foodGroupCode(alternative.getFoodGroupCode())
+                .expectedScore(alternative.getExpectedScore())
+                .expectedServing(alternative.getExpectedServing())
+                .expectedActualGrams(alternative.getExpectedActualGrams())
+                .favorite(favorites.contains(alternative.getDishId()))
                 .build();
     }
 
@@ -601,6 +656,7 @@ public class RecommendationApiService {
 
     private DishSuggestionResponse copyDish(DishSuggestionResponse dish) {
         return DishSuggestionResponse.builder()
+                .slotKey(dish.getSlotKey())
                 .dishId(dish.getDishId())
                 .dishName(dish.getDishName())
                 .slotCode(dish.getSlotCode())

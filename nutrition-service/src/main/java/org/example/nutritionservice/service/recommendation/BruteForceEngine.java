@@ -10,7 +10,9 @@ import org.example.nutritionservice.domain.recommendation.MealActual;
 import org.example.nutritionservice.domain.recommendation.MealCombination;
 import org.example.nutritionservice.domain.recommendation.MealTarget;
 import org.example.nutritionservice.domain.recommendation.PerMealConfig;
+import org.example.nutritionservice.domain.recommendation.SlotAlternative;
 import org.example.nutritionservice.domain.recommendation.UserContext;
+import org.example.nutritionservice.entity.catalog.FoodGroup;
 import org.example.nutritionservice.entity.catalog.SlotCode;
 import org.example.nutritionservice.entity.config.SlotConfig;
 import org.example.nutritionservice.exception.RecommendationTooComplexException;
@@ -117,6 +119,120 @@ public class BruteForceEngine {
                 .sorted()
                 .reduce((left, right) -> left + "," + right)
                 .orElse("");
+    }
+
+    /**
+     * Tinh danh sach mon thay the cho tung slot cua top combination.
+     */
+    public Map<String, List<SlotAlternative>> computeSlotAlternatives(
+            MealCombination topCombination,
+            Map<SlotCode, List<DishCandidate>> candidatesPerSlot,
+            MealTarget mealTarget,
+            LoadedConfigs configs) {
+        Map<String, List<SlotAlternative>> result = new java.util.LinkedHashMap<>();
+        int maxPerSlot = Integer.parseInt(
+                configs.getSystemConfigs().getOrDefault("display.slot_alternatives_count", "10")
+        );
+        boolean forbidSameGroup = forbidSameFoodGroupInMain(configs);
+        Map<SlotCode, Integer> slotCounter = new EnumMap<>(SlotCode.class);
+
+        for (int dishIndex = 0; dishIndex < topCombination.getDishes().size(); dishIndex++) {
+            DishWithServing currentDish = topCombination.getDishes().get(dishIndex);
+            SlotCode slot = currentDish.getCandidate().getSlotCode();
+            int slotIndex = slotCounter.getOrDefault(slot, 0);
+            String slotKey = slot.name() + "_" + slotIndex;
+            slotCounter.put(slot, slotIndex + 1);
+
+            Set<String> excludeDishIds = topCombination.getDishes().stream()
+                    .filter(dish -> dish.getCandidate().getSlotCode() == slot)
+                    .map(dish -> dish.getCandidate().getDishId())
+                    .collect(java.util.stream.Collectors.toSet());
+
+            int currentDishIndex = dishIndex;
+            List<SlotAlternative> alternatives = candidatesPerSlot.getOrDefault(slot, List.of()).stream()
+                    .filter(candidate -> !excludeDishIds.contains(candidate.getDishId()))
+                    .map(candidate -> computeOneAlternative(topCombination, currentDishIndex, candidate, mealTarget, configs))
+                    .filter(java.util.Objects::nonNull)
+                    .sorted(Comparator.comparing(SlotAlternative::getExpectedScore).reversed())
+                    .toList();
+
+            result.put(slotKey, diverseAlternatives(slot, alternatives, topCombination, forbidSameGroup, maxPerSlot));
+        }
+        return result;
+    }
+
+    private List<SlotAlternative> diverseAlternatives(
+            SlotCode slot,
+            List<SlotAlternative> alternatives,
+            MealCombination topCombination,
+            boolean forbidSameGroup,
+            int maxPerSlot) {
+        if (slot != SlotCode.CHINH || !forbidSameGroup) {
+            return alternatives.stream().limit(maxPerSlot).toList();
+        }
+
+        Set<FoodGroup> seenGroups = topCombination.getDishes().stream()
+                .filter(dish -> dish.getCandidate().getSlotCode() == SlotCode.CHINH)
+                .map(dish -> dish.getCandidate().getFoodGroupCode())
+                .collect(java.util.stream.Collectors.toCollection(HashSet::new));
+        List<SlotAlternative> diverse = new ArrayList<>();
+        for (SlotAlternative alternative : alternatives) {
+            if (!seenGroups.add(alternative.getFoodGroupCode())) {
+                continue;
+            }
+            diverse.add(alternative);
+            if (diverse.size() >= maxPerSlot) {
+                break;
+            }
+        }
+        return diverse;
+    }
+
+    private SlotAlternative computeOneAlternative(
+            MealCombination topCombination,
+            int swappedDishIndex,
+            DishCandidate newCandidate,
+            MealTarget mealTarget,
+            LoadedConfigs configs) {
+        BigDecimal bestScore = BigDecimal.valueOf(-1);
+        DishWithServing bestServing = null;
+        for (BigDecimal serving : servingSteps(newCandidate.getSlotCode(), configs)) {
+            DishWithServing newDishWithServing = withServing(newCandidate, serving);
+            if (violatesWeightConstraint(newDishWithServing, configs)) {
+                continue;
+            }
+
+            List<DishWithServing> testCombo = new ArrayList<>(topCombination.getDishes());
+            testCombo.set(swappedDishIndex, newDishWithServing);
+            MealActual actual = toActual(testCombo);
+            BigDecimal kcalDeviation = actual.getKcal().subtract(mealTarget.getMealKcal()).abs()
+                    .divide(mealTarget.getMealKcal(), CALC_SCALE, RoundingMode.HALF_UP);
+            if (kcalDeviation.compareTo(MAX_KCAL_DEVIATION) > 0) {
+                continue;
+            }
+
+            BigDecimal macroScore = scoringService.computeMacroScore(
+                    actual,
+                    mealTarget.getMacroTarget(),
+                    configs.getGoalConfig(),
+                    configs
+            );
+            BigDecimal score = macroScore.subtract(topCombination.getPenalty()).max(BigDecimal.ZERO);
+            if (score.compareTo(bestScore) > 0) {
+                bestScore = score;
+                bestServing = newDishWithServing;
+            }
+        }
+
+        if (bestServing == null) {
+            return null;
+        }
+        return SlotAlternative.builder()
+                .candidate(newCandidate)
+                .expectedScore(bestScore.setScale(FINAL_SCALE, RoundingMode.HALF_UP))
+                .expectedServing(bestServing.getServingMultiplier())
+                .expectedActualGrams(bestServing.getActualGrams())
+                .build();
     }
 
     private void enumerateServings(
