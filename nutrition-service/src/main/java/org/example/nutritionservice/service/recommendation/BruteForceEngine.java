@@ -109,6 +109,30 @@ public class BruteForceEngine {
     }
 
     /**
+     * Toi uu serving khi danh sach mon da duoc pin trong luong swap.
+     */
+    public MealCombination findBestServingCombo(
+            List<DishCandidate> pinnedDishes,
+            MealTarget mealTarget,
+            LoadedConfigs configs,
+            BigDecimal penalty) {
+        PriorityQueue<MealCombination> topCombinations = new PriorityQueue<>(
+                Comparator.comparing(MealCombination::getFinalScore)
+        );
+        enumerateServings(
+                pinnedDishes,
+                0,
+                new ArrayList<>(),
+                mealTarget,
+                configs,
+                penalty,
+                1,
+                topCombinations
+        );
+        return topCombinations.peek();
+    }
+
+    /**
      * Tao key mon chinh de moi nhom chi lay dai dien score cao nhat.
      */
     private String extractMainKey(MealCombination combination) {

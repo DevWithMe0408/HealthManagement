@@ -7,12 +7,15 @@ import org.example.nutritionservice.domain.recommendation.DishWithServing;
 import org.example.nutritionservice.domain.recommendation.HistoryEntry;
 import org.example.nutritionservice.domain.recommendation.LoadedConfigs;
 import org.example.nutritionservice.domain.recommendation.MacroTarget;
+import org.example.nutritionservice.domain.recommendation.MealKind;
 import org.example.nutritionservice.domain.recommendation.MealActual;
 import org.example.nutritionservice.domain.recommendation.MealCombination;
+import org.example.nutritionservice.domain.recommendation.MealTarget;
 import org.example.nutritionservice.domain.recommendation.PerMealConfig;
 import org.example.nutritionservice.domain.recommendation.RecommendedMeal;
 import org.example.nutritionservice.domain.recommendation.SlotAlternative;
 import org.example.nutritionservice.domain.recommendation.UserContext;
+import org.example.nutritionservice.dto.request.PinnedDish;
 import org.example.nutritionservice.dto.request.RecommendFullDayRequest;
 import org.example.nutritionservice.dto.request.SwapDishRequest;
 import org.example.nutritionservice.dto.response.DailyPlanResponse;
@@ -121,34 +124,69 @@ public class RecommendationApiService {
                 request.getCurrentPlan().getPlanType()
         );
         Set<String> favorites = favoriteIds(userId);
-        List<DishSuggestionResponse> updatedDishes = copyDishes(currentMeal.getTopCombination().getDishes());
-        int swappedIndex = findSwappedIndex(updatedDishes, request.getSwappedSlot());
-        Dish newDish = dishRepository.findById(request.getNewDishId())
-                .orElseThrow(() -> invalid("Mon thay the khong ton tai"));
-        DishSuggestionResponse previousDish = updatedDishes.get(swappedIndex);
-        if (newDish.getSlotCode() != previousDish.getSlotCode()) {
-            throw invalid("Mon thay the phai cung slot voi mon cu");
-        }
-        updatedDishes.set(swappedIndex, toDishResponse(
-                dishFilterService.toCandidate(newDish),
-                previousDish.getServingMultiplier(),
-                favorites
-        ));
 
+        List<DishSuggestionResponse> currentDishes = currentMeal.getTopCombination().getDishes();
+        findSwappedIndex(currentDishes, request.getSwappedSlot());
+        Map<String, String> pinnedMap = buildPinnedMap(currentDishes, request);
+        Set<String> explicitPinnedSlots = explicitPinnedSlots(request);
+
+        List<DishCandidate> pinnedCandidates = new ArrayList<>();
+        for (int index = 0; index < currentDishes.size(); index++) {
+            DishSuggestionResponse currentDish = currentDishes.get(index);
+            String slotKey = slotKeyOf(currentDishes, index);
+            String pinnedDishId = pinnedMap.get(slotKey);
+            Dish pinnedDish = dishRepository.findById(pinnedDishId)
+                    .orElseThrow(() -> invalid("Mon trong slot " + slotKey + " khong ton tai"));
+            if (pinnedDish.getSlotCode() != currentDish.getSlotCode()) {
+                throw invalid("Mon pin tai " + slotKey + " sai slot code");
+            }
+            pinnedCandidates.add(dishFilterService.toCandidate(pinnedDish));
+        }
+
+        PerMealConfig perMealConfig = buildPerMealConfig(currentDishes);
         MacroTarget macroTarget = macroCalculator.calculateMacroTarget(
                 currentMeal.getMealKcalTarget(),
                 configs.getGoalConfig()
         );
+        MealTarget mealTarget = MealTarget.builder()
+                .mealDate(request.getCurrentPlan().getPlanDate())
+                .mealType(currentMeal.getMealType())
+                .mealKcal(currentMeal.getMealKcalTarget())
+                .macroTarget(macroTarget)
+                .slotKcalTargets(macroCalculator.calculateSlotKcalTargets(
+                        currentMeal.getMealKcalTarget(),
+                        configs.getGoalConfig(),
+                        perMealConfig
+                ))
+                .perMealConfig(perMealConfig)
+                .build();
+
         List<HistoryEntry> history = loadHistory(userId, request.getCurrentPlan().getPlanDate(), configs);
         history.addAll(planHistoryWithoutMeal(request.getCurrentPlan(), request.getMealType()));
-        MealCombinationResponse updatedCombination = scoreCombination(
-                updatedDishes,
-                macroTarget,
-                configs,
+        BigDecimal penalty = penaltyService.computePenalty(
+                pinnedCandidates,
                 history,
-                request.getCurrentPlan().getPlanDate(),
-                favorites
+                favorites,
+                configs,
+                mealTarget.getMealDate()
         );
+        MealCombination bestCombo = bruteForceEngine.findBestServingCombo(
+                pinnedCandidates,
+                mealTarget,
+                configs,
+                penalty
+        );
+        if (bestCombo == null) {
+            throw invalid("Khong tim duoc serving thoa man sau khi doi mon");
+        }
+
+        Map<String, List<SlotAlternative>> slotAlternatives = bruteForceEngine.computeSlotAlternatives(
+                bestCombo,
+                loadCandidatesPerSlot(mealTarget, configs),
+                mealTarget,
+                configs
+        );
+        MealCombinationResponse updatedCombination = toCombinationResponse(bestCombo, favorites);
         BigDecimal originalFinalScore = currentMeal.getTopCombination().getFinalScore();
         boolean triggered = updatedCombination.getFinalScore()
                 .compareTo(BigDecimal.valueOf(configs.getInt("reopt.score_threshold"))) < 0
@@ -159,26 +197,26 @@ public class RecommendationApiService {
                 .mealType(currentMeal.getMealType())
                 .mealKcalTarget(currentMeal.getMealKcalTarget())
                 .topCombination(updatedCombination)
-                .slotAlternatives(Map.of())
+                .slotAlternatives(slotAlternatives.entrySet().stream()
+                        .collect(Collectors.toMap(
+                                Map.Entry::getKey,
+                                entry -> entry.getValue().stream()
+                                        .map(alternative -> toDishOptionResponse(alternative, favorites))
+                                        .toList(),
+                                (left, right) -> left,
+                                LinkedHashMap::new
+                        )))
                 .build();
         return SwapResultResponse.builder()
                 .updatedMeal(updatedMeal)
                 .newFinalScore(updatedCombination.getFinalScore())
                 .originalFinalScore(originalFinalScore)
                 .scoreDropTriggered(triggered)
-                .suggestion(triggered
-                        ? findServingSuggestion(
-                                updatedDishes,
-                                swappedIndex,
-                                updatedCombination,
-                                currentMeal,
-                                macroTarget,
-                                configs,
-                                history,
-                                request.getCurrentPlan().getPlanDate(),
-                                favorites
-                        )
-                        : null)
+                .suggestion(triggered ? findBestSwapSuggestion(
+                        slotAlternatives,
+                        explicitPinnedSlots,
+                        updatedCombination.getFinalScore()
+                ) : null)
                 .build();
     }
 
@@ -288,6 +326,105 @@ public class RecommendationApiService {
                 .expectedActualGrams(alternative.getExpectedActualGrams())
                 .favorite(favorites.contains(alternative.getDishId()))
                 .build();
+    }
+
+    private Map<String, String> buildPinnedMap(List<DishSuggestionResponse> currentDishes, SwapDishRequest request) {
+        Map<String, String> pinnedMap = new LinkedHashMap<>();
+        for (int index = 0; index < currentDishes.size(); index++) {
+            pinnedMap.put(slotKeyOf(currentDishes, index), currentDishes.get(index).getDishId());
+        }
+        if (request.getPinnedDishes() != null) {
+            for (PinnedDish pinnedDish : request.getPinnedDishes()) {
+                if (!pinnedMap.containsKey(pinnedDish.getSlotKey())) {
+                    throw invalid("Slot pin khong ton tai: " + pinnedDish.getSlotKey());
+                }
+                pinnedMap.put(pinnedDish.getSlotKey(), pinnedDish.getDishId());
+            }
+        }
+        if (!pinnedMap.containsKey(request.getSwappedSlot())) {
+            throw invalid("Khong tim thay slot " + request.getSwappedSlot());
+        }
+        pinnedMap.put(request.getSwappedSlot(), request.getNewDishId());
+        return pinnedMap;
+    }
+
+    private Set<String> explicitPinnedSlots(SwapDishRequest request) {
+        Set<String> pinnedSlots = new java.util.LinkedHashSet<>();
+        if (request.getPinnedDishes() != null) {
+            request.getPinnedDishes().stream()
+                    .map(PinnedDish::getSlotKey)
+                    .forEach(pinnedSlots::add);
+        }
+        pinnedSlots.add(request.getSwappedSlot());
+        return pinnedSlots;
+    }
+
+    private PerMealConfig buildPerMealConfig(List<DishSuggestionResponse> dishes) {
+        Map<SlotCode, Integer> slotCounts = new EnumMap<>(SlotCode.class);
+        dishes.forEach(dish -> slotCounts.merge(dish.getSlotCode(), 1, Integer::sum));
+        if (slotCounts.getOrDefault(SlotCode.COMBO, 0) > 0) {
+            return PerMealConfig.builder()
+                    .mealKind(MealKind.COMBO)
+                    .build();
+        }
+        return PerMealConfig.builder()
+                .mealKind(MealKind.NHIEU_MON)
+                .nMain(slotCounts.getOrDefault(SlotCode.CHINH, 0))
+                .nRau(slotCounts.getOrDefault(SlotCode.RAU, 0))
+                .nCarb(slotCounts.getOrDefault(SlotCode.TINH_BOT, 0))
+                .build();
+    }
+
+    private Map<SlotCode, List<DishCandidate>> loadCandidatesPerSlot(MealTarget mealTarget, LoadedConfigs configs) {
+        Map<SlotCode, List<DishCandidate>> candidates = new LinkedHashMap<>();
+        for (Map.Entry<SlotCode, BigDecimal> slotTarget : mealTarget.getSlotKcalTargets().entrySet()) {
+            int slotCount = mealTarget.getPerMealConfig().countForSlot(slotTarget.getKey());
+            if (slotCount <= 0) {
+                continue;
+            }
+            candidates.put(slotTarget.getKey(), dishFilterService.filterCandidatesForSlot(
+                    slotTarget.getKey(),
+                    slotTarget.getValue(),
+                    slotCount,
+                    configs,
+                    dishRepository.findBySlotCodeAndIsActiveTrue(slotTarget.getKey())
+            ));
+        }
+        return candidates;
+    }
+
+    private SwapResultResponse.SwapSuggestion findBestSwapSuggestion(
+            Map<String, List<SlotAlternative>> slotAlternatives,
+            Set<String> explicitPinnedSlots,
+            BigDecimal currentScore) {
+        SlotAlternative bestAlternative = null;
+        String bestSlotKey = null;
+        for (Map.Entry<String, List<SlotAlternative>> entry : slotAlternatives.entrySet()) {
+            if (explicitPinnedSlots.contains(entry.getKey()) || entry.getValue().isEmpty()) {
+                continue;
+            }
+            SlotAlternative alternative = entry.getValue().get(0);
+            if (bestAlternative == null
+                    || alternative.getExpectedScore().compareTo(bestAlternative.getExpectedScore()) > 0) {
+                bestAlternative = alternative;
+                bestSlotKey = entry.getKey();
+            }
+        }
+        if (bestAlternative == null || bestAlternative.getExpectedScore().compareTo(currentScore) <= 0) {
+            return null;
+        }
+        return SwapResultResponse.SwapSuggestion.builder()
+                .message("Doi mon o [" + bestSlotKey + "] sang [" + bestAlternative.getCandidate().getDishName()
+                        + "] co the tang score len " + bestAlternative.getExpectedScore())
+                .targetSlotKey(bestSlotKey)
+                .suggestedDishId(bestAlternative.getDishId())
+                .suggestedScore(bestAlternative.getExpectedScore())
+                .build();
+    }
+
+    private String slotKeyOf(List<DishSuggestionResponse> dishes, int index) {
+        String slotKey = dishes.get(index).getSlotKey();
+        return slotKey == null || slotKey.isBlank() ? slotId(dishes, index) : slotKey;
     }
 
     private DishSuggestionResponse toDishResponse(
