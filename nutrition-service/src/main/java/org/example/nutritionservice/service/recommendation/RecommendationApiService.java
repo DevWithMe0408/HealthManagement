@@ -366,7 +366,7 @@ public class RecommendationApiService {
                 .build();
     }
 
-    private SwapResultResponse.ServingSuggestionResponse findServingSuggestion(
+    private SwapResultResponse.SwapSuggestion findServingSuggestion(
             List<DishSuggestionResponse> updatedDishes,
             int swappedIndex,
             MealCombinationResponse currentScore,
@@ -397,12 +397,12 @@ public class RecommendationApiService {
             return null;
         }
         DishSuggestionResponse changedDish = best.dishes().get(changedIndex);
-        return SwapResultResponse.ServingSuggestionResponse.builder()
+        return SwapResultResponse.SwapSuggestion.builder()
                 .message("Dieu chinh [" + changedDish.getDishName() + "] sang serving "
                         + changedDish.getServingMultiplier() + " se tang score len " + best.score().getFinalScore())
-                .targetSlotIdInMeal(slotId(updatedDishes, changedIndex))
-                .suggestedServingMultiplier(changedDish.getServingMultiplier())
-                .suggestedNewScore(best.score().getFinalScore())
+                .targetSlotKey(slotId(updatedDishes, changedIndex))
+                .suggestedDishId(changedDish.getDishId())
+                .suggestedScore(best.score().getFinalScore())
                 .build();
     }
 

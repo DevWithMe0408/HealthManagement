@@ -10,6 +10,8 @@ import lombok.NoArgsConstructor;
 import org.example.nutritionservice.dto.response.DailyPlanResponse;
 import org.example.nutritionservice.entity.meallog.MealType;
 
+import java.util.List;
+
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -28,4 +30,7 @@ public class SwapDishRequest {
 
     @NotBlank
     private String newDishId;
+
+    @Valid
+    private List<PinnedDish> pinnedDishes;
 }

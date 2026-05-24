@@ -17,16 +17,16 @@ public class SwapResultResponse {
     private BigDecimal newFinalScore;
     private BigDecimal originalFinalScore;
     private boolean scoreDropTriggered;
-    private ServingSuggestionResponse suggestion;
+    private SwapSuggestion suggestion;
 
     @Data
     @NoArgsConstructor
     @AllArgsConstructor
     @Builder
-    public static class ServingSuggestionResponse {
+    public static class SwapSuggestion {
         private String message;
-        private String targetSlotIdInMeal;
-        private BigDecimal suggestedServingMultiplier;
-        private BigDecimal suggestedNewScore;
+        private String targetSlotKey;
+        private String suggestedDishId;
+        private BigDecimal suggestedScore;
     }
 }
