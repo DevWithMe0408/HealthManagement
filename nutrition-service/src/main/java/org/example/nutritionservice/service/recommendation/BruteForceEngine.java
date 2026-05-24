@@ -104,6 +104,13 @@ public class BruteForceEngine {
             return;
         }
 
+        if (dishIndex > 0 && shouldPrune(current, dishCombo, dishIndex, mealTarget, configs)) {
+            if (log.isDebugEnabled()) {
+                log.debug("Pruned serving branch mealType={} dishIndex={}", mealTarget.getMealType(), dishIndex);
+            }
+            return;
+        }
+
         DishCandidate candidate = dishCombo.get(dishIndex);
         for (BigDecimal serving : servingSteps(candidate.getSlotCode(), configs)) {
             DishWithServing dishWithServing = withServing(candidate, serving);
@@ -123,6 +130,32 @@ public class BruteForceEngine {
             );
             current.remove(current.size() - 1);
         }
+    }
+
+    private boolean shouldPrune(
+            List<DishWithServing> current,
+            List<DishCandidate> dishCombo,
+            int dishIndex,
+            MealTarget mealTarget,
+            LoadedConfigs configs) {
+        BigDecimal kcalSoFar = current.stream()
+                .map(DishWithServing::getKcal)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        BigDecimal minServing = configs.getDecimal("filter.serving_min");
+        BigDecimal maxServing = configs.getDecimal("filter.serving_max");
+        BigDecimal kcalRemainingMin = BigDecimal.ZERO;
+        BigDecimal kcalRemainingMax = BigDecimal.ZERO;
+        for (int index = dishIndex; index < dishCombo.size(); index++) {
+            BigDecimal baseKcal = dishCombo.get(index).getBaseKcal();
+            kcalRemainingMin = kcalRemainingMin.add(baseKcal.multiply(minServing));
+            kcalRemainingMax = kcalRemainingMax.add(baseKcal.multiply(maxServing));
+        }
+
+        BigDecimal lowerBound = mealTarget.getMealKcal().multiply(BigDecimal.ONE.subtract(MAX_KCAL_DEVIATION));
+        BigDecimal upperBound = mealTarget.getMealKcal().multiply(BigDecimal.ONE.add(MAX_KCAL_DEVIATION));
+        return kcalSoFar.add(kcalRemainingMax).compareTo(lowerBound) < 0
+                || kcalSoFar.add(kcalRemainingMin).compareTo(upperBound) > 0;
     }
 
     private void scoreServingCombination(
