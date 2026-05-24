@@ -49,7 +49,7 @@ INSERT IGNORE INTO system_config (config_key, config_value, value_type, descript
 ('filter.kcal_tolerance',      '0.15',                          'DECIMAL',    'Bien loc kcal (15%)',              NOW(), NOW()),
 ('filter.serving_min',         '0.50',                          'DECIMAL',    'Muc serving nho nhat',             NOW(), NOW()),
 ('filter.serving_max',         '2.00',                          'DECIMAL',    'Muc serving lon nhat',             NOW(), NOW()),
-('filter.serving_steps',       '[0.5,0.75,1.0,1.25,1.5,1.75,2.0]', 'JSON_ARRAY', 'Cac muc serving cho mon thuong', NOW(), NOW()),
+('filter.serving_steps',       '[0.5,0.75,1.0,1.5,2.0]',        'JSON_ARRAY', 'Cac muc serving cho mon thuong', NOW(), NOW()),
 ('filter.combo_serving_steps', '[0.75,1.0,1.25,1.5]',           'JSON_ARRAY', 'Cac muc serving cho mon combo',   NOW(), NOW()),
 ('penalty.cap',                '40',                            'INT',        'Penalty toi da cho 1 to hop',      NOW(), NOW()),
 ('penalty.fav_discount',       '0.5',                           'DECIMAL',    'He so giam penalty cho mon yeu thich', NOW(), NOW()),
