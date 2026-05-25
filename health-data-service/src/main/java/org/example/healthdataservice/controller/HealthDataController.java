@@ -4,6 +4,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.example.healthdataservice.dto.HistoricalDataPointDTO;
 import org.example.healthdataservice.dto.request.SubmitHealthDataRequest;
+import org.example.healthdataservice.dto.response.ConstitutionResponse;
 import org.example.healthdataservice.dto.response.DashboardMetricsResponse;
 import org.example.healthdataservice.dto.response.LatestHealthDataResponse;
 import org.example.healthdataservice.dto.response.MetricData;
@@ -11,6 +12,7 @@ import org.example.healthdataservice.entity.BaseMetricValue;
 import org.example.healthdataservice.entity.CalculatedMetricSnapshot;
 import org.example.healthdataservice.entity.enums.IndicatorType;
 import org.example.healthdataservice.service.BaseMetricService;
+import org.example.healthdataservice.service.BodyClassificationService;
 import org.example.healthdataservice.service.CalculatedMetricService;
 import org.example.healthdataservice.service.HealthDataSubmitService;
 import org.example.healthdataservice.service.HistoricalDataService;
@@ -39,6 +41,7 @@ public class HealthDataController {
     private final BaseMetricService baseMetricService;
     private final CalculatedMetricService calculatedMetricService;
     private final HistoricalDataService historicalDataService;
+    private final BodyClassificationService bodyClassificationService;
 
     @PostMapping("/submit")
     public ResponseEntity<DataResponse<Void>> submitHealthData(
@@ -133,6 +136,17 @@ public class HealthDataController {
         whrOpt.ifPresent(cms -> response.setWhr(new MetricData(cms.getValue(), cms.getUnit() != null ? cms.getUnit().getCode() : null, cms.getCalculatedAt())));
 
         return ResponseEntity.ok(response);
+    }
+
+    @GetMapping("/constitution")
+    public ResponseEntity<DataResponse<ConstitutionResponse>> getConstitution(
+            @RequestHeader("userId") String userId
+    ) {
+        if (userId == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+        ConstitutionResponse response = bodyClassificationService.classifyCurrent(userId);
+        return ResponseEntity.ok(DataResponse.success(response));
     }
 
     @GetMapping("/query/history/{indicatorTypeString}")

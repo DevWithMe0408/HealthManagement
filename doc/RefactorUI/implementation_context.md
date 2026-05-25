@@ -342,3 +342,78 @@ Verification:
 ```
 
 Result: `BUILD SUCCESS`.
+
+## Step 6 Commit
+
+Commit message: `feat: add health constitution endpoint`
+
+Implemented:
+
+- Add `BodyClassifier` util in `health-data-service`.
+- Add `ConstitutionResponse` DTO.
+- Add `BodyClassificationService` / `BodyClassificationServiceImpl`.
+- Add endpoint `GET /api/health-data/constitution`.
+- Add unit test `BodyClassifierTest` for BMI/PBF thresholds and final class fallback.
+
+Endpoint:
+
+### `GET /api/health-data/constitution`
+
+- Reads current user from `userId` gateway header.
+- Requires synced user profile gender in `user_for_health_data`.
+- Requires latest BMI snapshot from `calculated_metric_snapshots`.
+- Reads latest PBF snapshot if available.
+- Reads `pbf_method` from `user_preference_mirror`; defaults to `FORMULA` if mirror row is absent.
+- Classification method is currently `RULE_BMI_PBF`; `MODEL_1` / `MODEL_2` ML wiring is not implemented yet.
+- `suggestedGoal` mapping:
+  - `GAY` -> `TANG`
+  - `CAN_DOI` -> `DUY_TRI`
+  - `THUA_CAN` / `BEO_PHI` -> `GIAM`
+
+Success response:
+
+```json
+{
+  "code": null,
+  "message": "Success",
+  "data": {
+    "constitution": "CAN_DOI",
+    "method": "RULE_BMI_PBF",
+    "bmi": 22.1,
+    "pbf": 15.4,
+    "pbfSource": "FORMULA",
+    "bmiClass": 1,
+    "pbfClass": 1,
+    "finalClass": 1,
+    "suggestedGoal": "DUY_TRI",
+    "warning": null,
+    "computedAt": "2026-05-25T23:19:00"
+  }
+}
+```
+
+Incomplete PBF behavior:
+
+- If BMI exists but PBF is missing, endpoint still returns `200`.
+- `pbf`, `pbfClass` are `null`.
+- `finalClass` falls back to `bmiClass`.
+- `warning` is set:
+  - Female: `Thieu vong eo, co, hoac hong - chi phan loai theo BMI`
+  - Male/other: `Thieu vong eo hoac co - chi phan loai theo BMI`
+
+Error behavior:
+
+- Missing synced gender/profile returns `422` with `HEALTH-002`.
+- Missing latest BMI snapshot returns `422` with `HEALTH-001`.
+
+Verification:
+
+```powershell
+.\mvnw.cmd -pl common,health-data-service -am test
+```
+
+Result: `BUILD SUCCESS`.
+
+Known limitation:
+
+- `HealthCalculator.calculatePBF()` still requires age even though Navy formula does not need age. This was already noted in spec as optional; not changed in this step to keep the constitution endpoint commit scoped.
