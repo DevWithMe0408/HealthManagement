@@ -243,6 +243,45 @@ Verification:
 
 Result: `BUILD SUCCESS`.
 
+## Step 5 Commit
+
+Commit message: `feat: mirror user preferences in health data`
+
+Implemented:
+
+- Add `user_preference_mirror` entity/table model in `health-data-service`.
+- Add `UserPreferenceMirrorService`:
+  - `saveOrUpdate(userId, prefKey, prefValue)`
+  - `getValue(userId, prefKey)`
+  - `getValueOrDefault(userId, prefKey, defaultValue)`
+- Add RabbitMQ queue and binding in `health-data-service`:
+  - queue: `health-data.user-preferences-updated.queue`
+  - routing key: `user.preferences.updated`
+- Add listener for `UserPreferencesUpdatedEvent`.
+
+Event behavior:
+
+- When `prefValue` is non-null, health-data-service upserts the mirror row.
+- When `prefValue` is `null`, health-data-service deletes the mirror row.
+- Future `GET /api/health-data/constitution` should read:
+
+```java
+userPreferenceMirrorService.getValueOrDefault(userId, "pbf_method", "FORMULA")
+```
+
+Known limitation:
+
+- Register seed in `user-service` writes `pbf_method=FORMULA`, but does not publish a preference event.
+- This is acceptable for now because health-data-service should default to `FORMULA` when no mirror row exists.
+
+Verification:
+
+```powershell
+.\mvnw.cmd -pl common,health-data-service -am test
+```
+
+Result: `BUILD SUCCESS`.
+
 ## Step 2 Commit
 
 Commit message: `feat: add onboarding profile completion contract`

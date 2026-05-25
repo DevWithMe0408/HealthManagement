@@ -2,8 +2,10 @@ package org.example.healthdataservice.listener;
 
 import org.example.events.UserCreatedEvent;
 import org.example.events.UserProfileUpdatedEvent;
+import org.example.events.UserPreferencesUpdatedEvent;
 import org.example.healthdataservice.service.CalculatedMetricService;
 import org.example.healthdataservice.service.HealthIndicatorConfigsService;
+import org.example.healthdataservice.service.UserPreferenceMirrorService;
 import org.example.healthdataservice.service.UserProfileMirrorService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -24,6 +26,9 @@ public class UserEventListener {
 
     @Autowired
     private UserProfileMirrorService userProfileMirrorService;
+
+    @Autowired
+    private UserPreferenceMirrorService userPreferenceMirrorService;
 
     @RabbitListener(queues = "${app.rabbitmq.queue.health-data-user-created}")
     public void handleUserCreatedEvent(@Payload UserCreatedEvent event) {
@@ -55,6 +60,20 @@ public class UserEventListener {
         } catch (Exception e) {
             log.error("Error processing UserProfileUpdatedEvent for userId {}: {}", userId, e.getMessage(), e);
             throw new RuntimeException("Failed to process UserProfileUpdatedEvent for userId: " + userId, e);
+        }
+    }
+
+    @RabbitListener(queues = "${app.rabbitmq.queue.health-data-user-preferences-updated}")
+    public void handleUserPreferencesUpdatedEvent(@Payload UserPreferencesUpdatedEvent event) {
+        String userId = event.getUserId();
+        log.info("Health-Data-Service: Received UserPreferencesUpdatedEvent for userId: {}, key: {}, value: {}",
+                userId, event.getPrefKey(), event.getPrefValue());
+        try {
+            userPreferenceMirrorService.saveOrUpdate(userId, event.getPrefKey(), event.getPrefValue());
+            log.info("Successfully processed UserPreferencesUpdatedEvent for userId: {}", userId);
+        } catch (Exception e) {
+            log.error("Error processing UserPreferencesUpdatedEvent for userId {}: {}", userId, e.getMessage(), e);
+            throw new RuntimeException("Failed to process UserPreferencesUpdatedEvent for userId: " + userId, e);
         }
     }
 }

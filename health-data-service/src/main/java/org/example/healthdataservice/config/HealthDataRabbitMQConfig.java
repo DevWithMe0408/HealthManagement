@@ -28,6 +28,12 @@ public class HealthDataRabbitMQConfig {
     @Value("${app.rabbitmq.routing-key.user-profile-updated}")
     private String userProfileUpdatedRoutingKey;
 
+    @Value("${app.rabbitmq.queue.health-data-user-preferences-updated}")
+    private String userPreferencesUpdatedQueueName;
+
+    @Value("${app.rabbitmq.routing-key.user-preferences-updated}")
+    private String userPreferencesUpdatedRoutingKey;
+
     // 1. Định nghĩa Queue cho service này để nhận UserCreatedEvent
     @Bean
     Queue healthDataUserCreatedQueue() {
@@ -73,5 +79,18 @@ public class HealthDataRabbitMQConfig {
         return BindingBuilder.bind(healthDataUserProfileUpdatedQueue)
                 .to(userEventsExchange)
                 .with(userProfileUpdatedRoutingKey);
+    }
+
+    @Bean
+    Queue healthDataUserPreferencesUpdatedQueue() {
+        return new Queue(userPreferencesUpdatedQueueName, true, false, false);
+    }
+
+    @Bean
+    Binding healthDataUserPreferencesUpdatedBinding(Queue healthDataUserPreferencesUpdatedQueue,
+                                                    TopicExchange userEventsExchange) {
+        return BindingBuilder.bind(healthDataUserPreferencesUpdatedQueue)
+                .to(userEventsExchange)
+                .with(userPreferencesUpdatedRoutingKey);
     }
 }
