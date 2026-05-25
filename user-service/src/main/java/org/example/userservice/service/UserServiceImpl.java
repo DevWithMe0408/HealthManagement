@@ -55,6 +55,7 @@ public class UserServiceImpl implements UserService {
         user.setPhone(null);
         user.setBirthDate(null);
         user.setAge(null);
+        user.setProfileCompleted(false);
         return user;
     }
 
@@ -128,6 +129,15 @@ public class UserServiceImpl implements UserService {
             }
         }
         return updatedUser;
+    }
+
+    @Override
+    @Transactional
+    public void markProfileCompleted(String userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
+        user.setProfileCompleted(true);
+        userRepository.save(user);
     }
 
     @Override

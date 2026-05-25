@@ -13,6 +13,7 @@ public interface UserService {
     List<User> findAll();
     void deleteById(String id);
     User updateUserProfile(String id, User newUserData);
+    void markProfileCompleted(String userId);
     void deleteUserAndAuthById(String userId);
     User createAndAssociateUser(Auth auth);
 }

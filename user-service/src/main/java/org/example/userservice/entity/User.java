@@ -36,4 +36,7 @@ public class User {
     private LocalDateTime createdAt;
 
     private Integer age;
+
+    @Column(name = "profile_completed", nullable = false)
+    private Boolean profileCompleted = false;
 }

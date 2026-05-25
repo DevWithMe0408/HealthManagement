@@ -16,6 +16,8 @@ public interface UserRepository extends JpaRepository<User, String> {
 
     Optional<User> findByAuth_Id(String authId);
 
+    Optional<User> findByAuth_Username(String username);
+
     @Query("""
         SELECT u FROM User u
         WHERE (:search IS NULL OR :search = ''

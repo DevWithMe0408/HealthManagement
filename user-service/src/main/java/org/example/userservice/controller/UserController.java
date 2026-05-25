@@ -26,6 +26,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 @RestController
@@ -81,7 +82,7 @@ public class UserController {
         } else {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
-        return ResponseEntity.ok(DataResponse.success(new UserProfileResponse(userId, username, roles)));
+        return ResponseEntity.ok(DataResponse.success(buildCurrentUserResponse(userId, username, roles)));
     }
 
     @GetMapping("/{id}")
@@ -130,6 +131,13 @@ public class UserController {
         return ResponseEntity.ok(DataResponse.success(userMapper.toDTO(updated)));
     }
 
+    @PutMapping("/profile-completed")
+    public ResponseEntity<DataResponse<Void>> markProfileCompleted(
+            @RequestHeader("userId") String userIdFromGateway) {
+        userService.markProfileCompleted(userIdFromGateway);
+        return ResponseEntity.ok(DataResponse.success());
+    }
+
     @PutMapping("/update/{id}")
     public ResponseEntity<DataResponse<UserResponseDTO>> updateUser(
             @PathVariable String id, @RequestBody UserRequestDTO userDTO) {
@@ -141,5 +149,22 @@ public class UserController {
     public ResponseEntity<DataResponse<Void>> deleteUser(@PathVariable String id) {
         userService.deleteUserAndAuthById(id);
         return ResponseEntity.ok(DataResponse.success());
+    }
+
+    private UserProfileResponse buildCurrentUserResponse(String userId, String username, List<String> roles) {
+        Optional<User> userOpt = userId != null
+                ? userRepository.findById(userId)
+                : userRepository.findByAuth_Username(username);
+
+        UserProfileResponse response = new UserProfileResponse(userId, username, roles);
+        userOpt.ifPresent(user -> {
+            response.setUserId(user.getId());
+            response.setName(user.getName());
+            response.setPhone(user.getPhone());
+            response.setBirthDate(user.getBirthDate());
+            response.setGender(user.getGender());
+            response.setProfileCompleted(Boolean.TRUE.equals(user.getProfileCompleted()));
+        });
+        return response;
     }
 }

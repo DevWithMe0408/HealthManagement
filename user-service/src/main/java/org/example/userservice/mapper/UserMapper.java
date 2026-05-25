@@ -31,6 +31,7 @@ public class UserMapper {
         dto.setPhone(user.getPhone());
         dto.setBirthDate(user.getBirthDate());
         dto.setGender(user.getGender());
+        dto.setProfileCompleted(Boolean.TRUE.equals(user.getProfileCompleted()));
         return dto;
     }
 }

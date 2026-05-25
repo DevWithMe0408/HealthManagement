@@ -12,4 +12,5 @@ public class UserResponseDTO {
     private String phone;
     private LocalDate birthDate;
     private Gender gender;
+    private Boolean profileCompleted;
 }
