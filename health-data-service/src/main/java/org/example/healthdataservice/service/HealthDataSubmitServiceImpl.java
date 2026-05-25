@@ -12,7 +12,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
-import java.time.temporal.WeekFields;
 import java.util.*;
 
 @Service
@@ -41,14 +40,12 @@ public class HealthDataSubmitServiceImpl implements HealthDataSubmitService {
         LocalDateTime now = LocalDateTime.now(); // Thời điểm ghi nhận
         Set<IndicatorType> changedBaseMetrics = new HashSet<>();
 
-        // 1. Xử lý và lưu các chỉ số cơ bản từ request
-        saveBaseMetricFromRequest(userId, IndicatorType.HEIGHT, request.getHeight(), now, changedBaseMetrics);
-        saveBaseMetricFromRequest(userId, IndicatorType.WEIGHT, request.getWeight(), now, changedBaseMetrics);
-        saveBaseMetricFromRequest(userId, IndicatorType.WAIST, request.getWaist(), now, changedBaseMetrics);
-        saveBaseMetricFromRequest(userId, IndicatorType.HIP, request.getHip(), now, changedBaseMetrics);
-        saveBaseMetricFromRequest(userId, IndicatorType.NECK, request.getNeck(), now, changedBaseMetrics);
-        saveBaseMetricFromRequest(userId, IndicatorType.BUST, request.getBust(), now, changedBaseMetrics);
-        saveBaseMetricFromRequest(userId, IndicatorType.ACTIVITY_FACTOR, request.getActivityFactor(), now, changedBaseMetrics);
+        // Contract moi dung baseMetrics[], fallback field phang de khong pha client cu.
+        if (request.getBaseMetrics() != null && !request.getBaseMetrics().isEmpty()) {
+            saveBaseMetricsFromList(request, now, changedBaseMetrics);
+        } else {
+            saveBaseMetricsFromFlatFields(request, now, changedBaseMetrics);
+        }
 
         // 2. Xử lý các chỉ số tính toán do người dùng cung cấp (nếu có)
         if (request.getBMINew() != null) {
@@ -94,6 +91,38 @@ public class HealthDataSubmitServiceImpl implements HealthDataSubmitService {
             Optional<BaseMetricValue> saveMetric = baseMetricService.saveBaseMetricIfChanged(userId, type, value, unit, recordedAt);
             saveMetric.ifPresent(bmv -> changedMetricsCollector.add(bmv.getIndicatorType()));
         }
+    }
+
+    private void saveBaseMetricsFromList(SubmitHealthDataRequest request,
+                                         LocalDateTime recordedAt,
+                                         Set<IndicatorType> changedMetricsCollector) {
+        for (SubmitHealthDataRequest.BaseMetricInput metric : request.getBaseMetrics()) {
+            if (metric == null || metric.getType() == null) {
+                throw new IllegalArgumentException("baseMetrics.type khong duoc de trong");
+            }
+            if (!metric.getType().isBaseMetric()) {
+                throw new IllegalArgumentException("Chi so " + metric.getType() + " khong phai base metric");
+            }
+            saveBaseMetricFromRequest(
+                    request.getUserId(),
+                    metric.getType(),
+                    metric.getValue(),
+                    recordedAt,
+                    changedMetricsCollector
+            );
+        }
+    }
+
+    private void saveBaseMetricsFromFlatFields(SubmitHealthDataRequest request,
+                                               LocalDateTime recordedAt,
+                                               Set<IndicatorType> changedMetricsCollector) {
+        saveBaseMetricFromRequest(request.getUserId(), IndicatorType.HEIGHT, request.getHeight(), recordedAt, changedMetricsCollector);
+        saveBaseMetricFromRequest(request.getUserId(), IndicatorType.WEIGHT, request.getWeight(), recordedAt, changedMetricsCollector);
+        saveBaseMetricFromRequest(request.getUserId(), IndicatorType.WAIST, request.getWaist(), recordedAt, changedMetricsCollector);
+        saveBaseMetricFromRequest(request.getUserId(), IndicatorType.HIP, request.getHip(), recordedAt, changedMetricsCollector);
+        saveBaseMetricFromRequest(request.getUserId(), IndicatorType.NECK, request.getNeck(), recordedAt, changedMetricsCollector);
+        saveBaseMetricFromRequest(request.getUserId(), IndicatorType.BUST, request.getBust(), recordedAt, changedMetricsCollector);
+        saveBaseMetricFromRequest(request.getUserId(), IndicatorType.ACTIVITY_FACTOR, request.getActivityFactor(), recordedAt, changedMetricsCollector);
     }
 
     // Helper method để lấy Unit

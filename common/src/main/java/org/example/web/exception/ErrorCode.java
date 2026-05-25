@@ -28,6 +28,18 @@ public enum ErrorCode {
     CONFIG_VALIDATION_FAILED("CONFIG-002", HttpStatus.BAD_REQUEST, "Cau hinh khong hop le"),
     CONFIG_SUM_INVALID      ("CONFIG-003", HttpStatus.BAD_REQUEST, "Tong gia tri phai bang gia tri mong doi"),
 
+    // ===== USER SETTINGS / GOALS =====
+    PREFERENCE_INVALID_KEY  ("PREF-001", HttpStatus.BAD_REQUEST, "Key preference khong duoc ho tro"),
+    PREFERENCE_INVALID_VALUE("PREF-002", HttpStatus.BAD_REQUEST, "Gia tri preference khong hop le"),
+    PREFERENCE_NOT_FOUND    ("PREF-003", HttpStatus.NOT_FOUND,   "Khong tim thay preference"),
+    GOAL_NO_ACTIVE          ("GOAL-001", HttpStatus.NOT_FOUND,   "Chua co muc tieu dang active"),
+    GOAL_INVALID            ("GOAL-002", HttpStatus.BAD_REQUEST, "Muc tieu khong hop le"),
+
+    // ===== HEALTH DATA / DASHBOARD =====
+    HEALTH_MISSING_BASIC_DATA("HEALTH-001", HttpStatus.UNPROCESSABLE_ENTITY, "Can chieu cao va can nang de xac dinh the trang"),
+    HEALTH_MISSING_GENDER   ("HEALTH-002", HttpStatus.UNPROCESSABLE_ENTITY, "Can gioi tinh de xac dinh the trang"),
+    HEALTH_INVALID_METRIC   ("HEALTH-003", HttpStatus.BAD_REQUEST, "Chi so suc khoe khong hop le"),
+
     // ===== COMMON =====
     VALIDATION_FAILED       ("COMMON-001", HttpStatus.BAD_REQUEST,           "Du lieu khong hop le"),
     INTERNAL_SERVER_ERROR   ("COMMON-002", HttpStatus.INTERNAL_SERVER_ERROR, "Loi he thong");

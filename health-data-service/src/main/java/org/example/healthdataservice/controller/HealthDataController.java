@@ -14,6 +14,8 @@ import org.example.healthdataservice.service.BaseMetricService;
 import org.example.healthdataservice.service.CalculatedMetricService;
 import org.example.healthdataservice.service.HealthDataSubmitService;
 import org.example.healthdataservice.service.HistoricalDataService;
+import org.example.web.dto.response.DataResponse;
+import org.example.web.exception.ErrorCode;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -39,20 +41,27 @@ public class HealthDataController {
     private final HistoricalDataService historicalDataService;
 
     @PostMapping("/submit")
-    public ResponseEntity<String> submitHealthData(
+    public ResponseEntity<DataResponse<Void>> submitHealthData(
             @RequestHeader("userId") String userId,
             @Valid @RequestBody SubmitHealthDataRequest request) {
         request.setUserId(userId);
         try {
            log.info("Received health data submisstion for userId: {}", request.getUserId());
            healthDataSubmitService.processSubmittedHealthData(request);
-           return ResponseEntity.ok("Dữ liệu sức khỏe đã được xử lý thành công.");
+           return ResponseEntity.ok(DataResponse.success());
         } catch (IllegalArgumentException e) {
             log.error("Invalid argument in health data submisstion for userId: {}: {}", request.getUserId(), e.getMessage());
-            return ResponseEntity.badRequest().body("Lỗi dữ liệu đầu vào: " + e.getMessage());
+            return ResponseEntity
+                    .badRequest()
+                    .body(DataResponse.error(ErrorCode.HEALTH_INVALID_METRIC.getCode(), e.getMessage()));
         } catch (Exception e) {
             log.error("Error processing health data submisstion for userId: {}: {}", request.getUserId(), e.getMessage(), e);
-            return ResponseEntity.internalServerError().body("Đã xảy ra lỗi máy chủ khi xử lý dữ liệu của bạn.");
+            return ResponseEntity
+                    .internalServerError()
+                    .body(DataResponse.error(
+                            ErrorCode.INTERNAL_SERVER_ERROR.getCode(),
+                            ErrorCode.INTERNAL_SERVER_ERROR.getDefaultMessage()
+                    ));
         }
     }
 

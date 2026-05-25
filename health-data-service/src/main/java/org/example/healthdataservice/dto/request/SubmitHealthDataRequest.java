@@ -4,12 +4,16 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.example.healthdataservice.entity.enums.IndicatorType;
+
+import java.util.List;
 
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 public class SubmitHealthDataRequest {
     private String userId;
+    private List<BaseMetricInput> baseMetrics;
     private Double height;
     private Double weight;
     private Double waist;
@@ -35,4 +39,12 @@ public class SubmitHealthDataRequest {
 
     private Double age;
     private String gender;
+
+    @Data
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class BaseMetricInput {
+        private IndicatorType type;
+        private Double value;
+    }
 }

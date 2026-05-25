@@ -1,5 +1,6 @@
 package org.example.userservice.controller;
 
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.example.userservice.dto.request.UserRequestDTO;
 import org.example.web.dto.response.DataResponse;
@@ -119,6 +120,14 @@ public class UserController {
         User user = userMapper.toEntity(userDTO);
         User saved = userService.save(user);
         return ResponseEntity.status(HttpStatus.CREATED).body(DataResponse.success(userMapper.toDTO(saved)));
+    }
+
+    @PutMapping("/profile")
+    public ResponseEntity<DataResponse<UserResponseDTO>> updateCurrentUserProfile(
+            @RequestHeader("userId") String userIdFromGateway,
+            @Valid @RequestBody UserRequestDTO userDTO) {
+        User updated = userService.updateUserProfile(userIdFromGateway, userMapper.toEntity(userDTO));
+        return ResponseEntity.ok(DataResponse.success(userMapper.toDTO(updated)));
     }
 
     @PutMapping("/update/{id}")
