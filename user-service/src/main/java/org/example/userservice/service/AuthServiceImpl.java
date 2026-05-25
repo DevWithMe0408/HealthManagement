@@ -45,6 +45,9 @@ public class AuthServiceImpl implements AuthService {
     private UserService userService;
 
     @Autowired
+    private UserPreferenceService userPreferenceService;
+
+    @Autowired
     private PasswordEncoder passwordEncoder;
 
     @Autowired
@@ -100,6 +103,7 @@ public class AuthServiceImpl implements AuthService {
 
         // 2. Create User holding FK to Auth (User is the owning side now)
         User savedUser = userService.createAndAssociateUser(savedAuth);
+        userPreferenceService.seedDefaults(savedUser.getId());
 
         // 3. Publish event
         UserCreatedEvent event = new UserCreatedEvent(

@@ -153,6 +153,96 @@ Verification:
 
 Result: `BUILD SUCCESS`.
 
+## Step 4 Commit
+
+Commit message: `feat: add user preference endpoints`
+
+Implemented:
+
+- Add common event `UserPreferencesUpdatedEvent`.
+- Add `user_preferences` entity/table model in `user-service`.
+- Add default preference seed on registration:
+  - `prefKey`: `pbf_method`
+  - `prefValue`: `FORMULA`
+  - `valueType`: `STRING`
+- Add gateway route `/api/user-preferences/**` to `user-service`.
+- Add RabbitMQ routing key in `user-service`:
+  - `app.rabbitmq.routing-key.user-preferences-updated=user.preferences.updated`
+
+Important current state:
+
+- `user-service` now publishes `UserPreferencesUpdatedEvent` on preference update/delete.
+- `health-data-service` does not consume this event yet. The mirror table/listener will be implemented in the next backend step.
+- The seed during registration writes the default row in `user_db`; it does not publish the preference event yet. `health-data-service` can default to `FORMULA` until the user changes the preference.
+
+Allowed preference keys:
+
+- `pbf_method`
+
+Allowed `pbf_method` values:
+
+- `FORMULA`
+- `MODEL_1`
+
+Endpoints:
+
+### `GET /api/user-preferences`
+
+Returns all preferences for current user.
+
+Success response:
+
+```json
+{
+  "code": null,
+  "message": "Success",
+  "data": [
+    {
+      "prefKey": "pbf_method",
+      "prefValue": "FORMULA",
+      "valueType": "STRING",
+      "description": "Method tinh PBF: FORMULA (Navy) hoac MODEL_1 (ML)"
+    }
+  ]
+}
+```
+
+### `GET /api/user-preferences/{prefKey}`
+
+Returns one preference or `404` with `PREF-003` if not found.
+
+### `PUT /api/user-preferences/{prefKey}`
+
+Request:
+
+```json
+{
+  "prefValue": "MODEL_1",
+  "valueType": "STRING"
+}
+```
+
+Notes:
+
+- `prefValue` is required.
+- `valueType` is optional and defaults to `STRING`.
+- Invalid key returns `400` with `PREF-001`.
+- Invalid value returns `400` with `PREF-002`.
+- Publishes `UserPreferencesUpdatedEvent`.
+
+### `DELETE /api/user-preferences/{prefKey}`
+
+- Deletes the preference row for current user.
+- Publishes `UserPreferencesUpdatedEvent` with `prefValue=null`.
+
+Verification:
+
+```powershell
+.\mvnw.cmd -pl common,user-service,api-gateway -am test
+```
+
+Result: `BUILD SUCCESS`.
+
 ## Step 2 Commit
 
 Commit message: `feat: add onboarding profile completion contract`

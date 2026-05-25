@@ -40,6 +40,7 @@ app:
     routing-key:
       user-created: user.event.created
       user-profile-updated: user.profile.updated
+      user-preferences-updated: user.preferences.updated
 
 eureka:
   client:

@@ -35,6 +35,14 @@ spring:
             - name: JwtFilter
               args: { }
 
+        - id: user-preferences
+          uri: lb://user-service
+          predicates:
+            - Path=/api/user-preferences/**
+          filters:
+            - name: JwtFilter
+              args: { }
+
       # Health Data Service
         - id: health-data-service
           uri: lb://health-data-service
