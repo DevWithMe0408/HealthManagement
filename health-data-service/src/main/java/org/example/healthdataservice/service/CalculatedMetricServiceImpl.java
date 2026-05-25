@@ -133,8 +133,8 @@ public class CalculatedMetricServiceImpl implements CalculatedMetricService {
         }
 
         // Tính toán PBF
-        if (affects(IndicatorType.PBF, changedBaseMetrics) || isFullRecalculation(changedBaseMetrics)) { // PBF thường phụ thuộc vào tuổi
-            Double pbf = healthCalculator.calculatePBF(genderString, waist, hip, neck, height, age); // PBF Hải quân Mỹ có yếu tố tuổi
+        if (affects(IndicatorType.PBF, changedBaseMetrics) || isFullRecalculation(changedBaseMetrics)) {
+            Double pbf = healthCalculator.calculatePBF(genderString, waist, hip, neck, height, age);
             saveSystemCalculatedMetric(userId, IndicatorType.PBF, pbf, now);
         }
 

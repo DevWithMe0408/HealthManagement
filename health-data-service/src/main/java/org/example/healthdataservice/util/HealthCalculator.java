@@ -34,11 +34,11 @@ public class HealthCalculator {
         return bmr * activityFactor;
     }
 
-    // U.S. Navy Body Fat Formula (cần tuổi)
+    // U.S. Navy Body Fat Formula. The formula does not use age; ageYears is kept for API compatibility.
     public Double calculatePBF(String gender, Double waistCm, Double hipCm, Double neckCm,
                                Double heightCm,Double ageYears) {
-        if (gender == null || waistCm == null || heightCm == null || neckCm == null || ageYears == null ||
-                waistCm <=0 || heightCm <=0 || neckCm <=0 || ageYears <=0 ) {
+        if (gender == null || waistCm == null || heightCm == null || neckCm == null ||
+                waistCm <=0 || heightCm <=0 || neckCm <=0 ) {
             return null;
         }
         if (gender.equalsIgnoreCase("male")) {

@@ -414,6 +414,32 @@ Verification:
 
 Result: `BUILD SUCCESS`.
 
-Known limitation:
+Resolved in Step 7:
 
-- `HealthCalculator.calculatePBF()` still requires age even though Navy formula does not need age. This was already noted in spec as optional; not changed in this step to keep the constitution endpoint commit scoped.
+- `HealthCalculator.calculatePBF()` no longer requires age.
+
+## Step 7 Commit
+
+Commit message: `fix: allow pbf calculation without age`
+
+Implemented:
+
+- Updated `HealthCalculator.calculatePBF(...)` so `ageYears` is no longer required.
+- Kept the existing method signature for compatibility with current callers.
+- Removed misleading comments in the PBF recalculation path that said Navy PBF depends on age.
+- Added `HealthCalculatorTest`.
+
+Behavior after this step:
+
+- Male PBF requires: `gender`, `waist`, `neck`, `height`.
+- Female PBF requires: `gender`, `waist`, `hip`, `neck`, `height`.
+- `birthDate` / age is still needed for BMR/TDEE, but no longer blocks PBF.
+- This improves `GET /api/health-data/constitution` completeness because PBF snapshots can now be generated even when profile has gender but missing birth date.
+
+Verification:
+
+```powershell
+.\mvnw.cmd -pl common,health-data-service -am test
+```
+
+Result: `BUILD SUCCESS`.
