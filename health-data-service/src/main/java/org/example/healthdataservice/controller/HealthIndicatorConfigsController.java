@@ -5,6 +5,8 @@ import org.example.healthdataservice.entity.HealthIndicatorConfigs;
 import org.example.healthdataservice.entity.enums.IndicatorType;
 import org.example.healthdataservice.mapper.HealthIndicatorConfigsMapper;
 import org.example.healthdataservice.service.HealthIndicatorConfigsService;
+import org.example.web.dto.response.DataResponse;
+import org.example.web.exception.ErrorCode;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -19,22 +21,25 @@ public class HealthIndicatorConfigsController {
         this.healthIndicatorConfigsService = healthIndicatorConfigsService;
     }
     @GetMapping("/indicator-configs")
-    public ResponseEntity<List<HealthIndicatorConfigsDTO>> getAll() {
+    public ResponseEntity<DataResponse<List<HealthIndicatorConfigsDTO>>> getAll() {
         List<HealthIndicatorConfigsDTO> list = healthIndicatorConfigsService.getAll().stream()
                 .map(HealthIndicatorConfigsMapper::toDTO)
                 .toList();
-        return ResponseEntity.ok(list);
+        return ResponseEntity.ok(DataResponse.success(list));
     }
     @GetMapping("/indicator-configs/{indicatorType}")
-    public ResponseEntity<HealthIndicatorConfigs> getByIndicatorType(@PathVariable IndicatorType indicatorType) {
+    public ResponseEntity<DataResponse<HealthIndicatorConfigs>> getByIndicatorType(@PathVariable IndicatorType indicatorType) {
         return healthIndicatorConfigsService.getByType(indicatorType)
-                .map(ResponseEntity::ok)
-                .orElse(ResponseEntity.notFound().build());
+                .map(config -> ResponseEntity.ok(DataResponse.success(config)))
+                .orElseGet(() -> ResponseEntity.status(404).body(DataResponse.error(
+                        ErrorCode.HEALTH_INVALID_METRIC.getCode(),
+                        "Khong tim thay cau hinh chi so: " + indicatorType
+                )));
     }
     @PostMapping("/indicator-configs")
-    public ResponseEntity<HealthIndicatorConfigsDTO> create(@RequestBody HealthIndicatorConfigsDTO healthIndicatorConfigsDTO) {
+    public ResponseEntity<DataResponse<HealthIndicatorConfigsDTO>> create(@RequestBody HealthIndicatorConfigsDTO healthIndicatorConfigsDTO) {
         HealthIndicatorConfigs entity = HealthIndicatorConfigsMapper.toEntity(healthIndicatorConfigsDTO);
         HealthIndicatorConfigs saved = healthIndicatorConfigsService.save(entity);
-        return ResponseEntity.status(201).body(HealthIndicatorConfigsMapper.toDTO(saved));
+        return ResponseEntity.status(201).body(DataResponse.success(HealthIndicatorConfigsMapper.toDTO(saved)));
     }
 }

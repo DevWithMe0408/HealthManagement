@@ -4,6 +4,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.example.healthdataservice.dto.response.UnitDTO;
 import org.example.healthdataservice.service.UnitService;
+import org.example.web.dto.response.DataResponse;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -16,33 +17,33 @@ public class UnitController {
     private final UnitService service;
 
     @PostMapping
-    public ResponseEntity<UnitDTO> create(@Valid @RequestBody UnitDTO dto) {
-        return ResponseEntity.ok(service.create(dto));
+    public ResponseEntity<DataResponse<UnitDTO>> create(@Valid @RequestBody UnitDTO dto) {
+        return ResponseEntity.ok(DataResponse.success(service.create(dto)));
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<UnitDTO> update(@PathVariable Long id, @Valid @RequestBody UnitDTO dto) {
-        return ResponseEntity.ok(service.update(id, dto));
+    public ResponseEntity<DataResponse<UnitDTO>> update(@PathVariable Long id, @Valid @RequestBody UnitDTO dto) {
+        return ResponseEntity.ok(DataResponse.success(service.update(id, dto)));
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> delete(@PathVariable Long id) {
+    public ResponseEntity<DataResponse<Void>> delete(@PathVariable Long id) {
         service.delete(id);
-        return ResponseEntity.noContent().build();
+        return ResponseEntity.ok(DataResponse.success());
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<UnitDTO> getById(@PathVariable Long id) {
-        return ResponseEntity.ok(service.getById(id));
+    public ResponseEntity<DataResponse<UnitDTO>> getById(@PathVariable Long id) {
+        return ResponseEntity.ok(DataResponse.success(service.getById(id)));
     }
 
     @GetMapping
-    public ResponseEntity<List<UnitDTO>> getAll() {
-        return ResponseEntity.ok(service.getAll());
+    public ResponseEntity<DataResponse<List<UnitDTO>>> getAll() {
+        return ResponseEntity.ok(DataResponse.success(service.getAll()));
     }
     @PostMapping("/batch")
-    public ResponseEntity<List<UnitDTO>> createMany(@Valid @RequestBody List<@Valid UnitDTO> dtos) {
-        return ResponseEntity.ok(service.createMany(dtos));
+    public ResponseEntity<DataResponse<List<UnitDTO>>> createMany(@Valid @RequestBody List<@Valid UnitDTO> dtos) {
+        return ResponseEntity.ok(DataResponse.success(service.createMany(dtos)));
     }
 
 }

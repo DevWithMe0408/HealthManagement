@@ -69,7 +69,7 @@ public class HealthDataController {
     }
 
     @GetMapping("/latest-metrics")
-    public ResponseEntity<LatestHealthDataResponse> getLatestUserMetrics(
+    public ResponseEntity<DataResponse<LatestHealthDataResponse>> getLatestUserMetrics(
             @RequestHeader("userId") String userId //// Lấy userId từ header do API Gateway thêm vào
     ) {
         if (userId == null) {
@@ -96,10 +96,10 @@ public class HealthDataController {
         LatestHealthDataResponse response = new LatestHealthDataResponse(baseMetricsMap);
         // response.setBaseMetricsRecordedAt(baseMetricsRecordedAtMap);
 
-        return ResponseEntity.ok(response);
+        return ResponseEntity.ok(DataResponse.success(response));
     }
     @GetMapping("/dashboard-metrics")
-    public ResponseEntity<DashboardMetricsResponse> getDashboardMetrics(
+    public ResponseEntity<DataResponse<DashboardMetricsResponse>> getDashboardMetrics(
             @RequestHeader("userId") String userId
     ) {
         if (userId == null) {
@@ -135,7 +135,7 @@ public class HealthDataController {
         Optional<CalculatedMetricSnapshot> whrOpt = calculatedMetricService.getLatestSnapshot(userId, IndicatorType.WHR);
         whrOpt.ifPresent(cms -> response.setWhr(new MetricData(cms.getValue(), cms.getUnit() != null ? cms.getUnit().getCode() : null, cms.getCalculatedAt())));
 
-        return ResponseEntity.ok(response);
+        return ResponseEntity.ok(DataResponse.success(response));
     }
 
     @GetMapping("/constitution")
@@ -150,7 +150,7 @@ public class HealthDataController {
     }
 
     @GetMapping("/query/history/{indicatorTypeString}")
-    public ResponseEntity<List<HistoricalDataPointDTO>> getIndicatorHistory(
+    public ResponseEntity<DataResponse<List<HistoricalDataPointDTO>>> getIndicatorHistory(
             @RequestHeader("userId") String userId,
             @PathVariable String indicatorTypeString,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
@@ -167,7 +167,10 @@ public class HealthDataController {
             indicatorType = IndicatorType.valueOf(indicatorTypeString.toUpperCase()); // Chuyen String sang enum
         } catch (IllegalArgumentException e) {
             log.warn("Invalid indicatorType string: {}", indicatorTypeString);
-            return ResponseEntity.badRequest().body(Collections.singletonList(new HistoricalDataPointDTO(null, null,"Invalid Indicator Type")));
+            return ResponseEntity.badRequest().body(DataResponse.error(
+                    ErrorCode.HEALTH_INVALID_METRIC.getCode(),
+                    "Loai chi so khong hop le: " + indicatorTypeString
+            ));
         }
 
         LocalDateTime fromDateTime = from.atStartOfDay();
@@ -180,6 +183,6 @@ public class HealthDataController {
                 toDateTime,
                 granularity.toUpperCase()
         );
-        return ResponseEntity.ok(history);
+        return ResponseEntity.ok(DataResponse.success(history));
     }
 }
