@@ -1,172 +1,195 @@
-# Codex Handoff - Feature De Xuat Thuc Don
+# Codex Handoff - Refactor Feature De Xuat Thuc Don v3.3
 
 ## Muc tieu task dang lam
 
-- Thuc hien feature de xuat thuc don theo huong dan trong `doc/HuongDanXayDungFeatureDeXuatThucDon.md`.
-- Step 1, Step 2 va Step 3 da duoc hoan thanh, commit va push len branch `feature-DeXuatThucDon`.
-- Step 4 da duoc implement va verify xong, hien dang dung tai checkpoint review cuoi Part 1 truoc khi commit/push hoac sang Part 2.
+- Refactor feature de xuat thuc don theo nghiep vu moi `doc/nghiep_vu_de_xuat_thuc_don_v3.3.md` va huong dan `doc/HuongDanRefactor_v3_2.md`.
+- Cach lam theo yeu cau user: dung sau moi step/phien review; user OK thi moi commit step vua lam va tiep tuc step tiep theo.
+- Da hoan thanh va commit Phan A, Phan B. Chua lam Phan C.
+- Branch hien tai: `feature-DeXuatThucDon`.
 
 ## Cac file da doc
 
-### Tai lieu va cau hinh tong quan
-
-- `doc/HuongDanXayDungFeatureDeXuatThucDon.md`
-- `doc/nghiep_vu_de_xuat_thuc_don_v3.md`
+- `doc/codex-handoff.md`
 - `CLAUDE.md`
-- `pom.xml`
-- `nutrition-service/pom.xml`
+- `doc/nghiep_vu_de_xuat_thuc_don_v3.md`
+- `doc/nghiep_vu_de_xuat_thuc_don_v3.3.md`
+- `doc/HuongDanRefactor_v3_2.md`
 - `nutrition-service/src/main/resources/application.yml`
-- `api-gateway/src/main/resources/application.yml`
-
-### Security va response/exception dung chung
-
-- `common/src/main/java/org/example/security/HeaderAuthenticationFilter.java`
-- `common/src/main/java/org/example/dto/DataResponse.java`
-- `common/src/main/java/org/example/exception/BusinessException.java`
-- `common/src/main/java/org/example/exception/GlobalExceptionHandler.java`
-- `common/src/main/java/org/example/exception/ErrorCode.java`
-- `nutrition-service/src/main/java/org/example/nutritionservice/config/SecurityConfig.java`
-- Gateway JWT filter va cac route lien quan trong `api-gateway`.
-
-### Nutrition service
-
-- Entity, repository, controller, service va test hien co cho cac nhom:
-  - meal log
-  - favorite dish
-  - dish/catalog
-  - recommendation config
-  - recommendation core logic
+- `nutrition-service/src/main/resources/db/data.sql`
+- `nutrition-service/src/main/java/org/example/nutritionservice/service/recommendation/DishFilterService.java`
+- `nutrition-service/src/main/java/org/example/nutritionservice/service/recommendation/BruteForceEngine.java`
+- `nutrition-service/src/main/java/org/example/nutritionservice/service/recommendation/RecommendationOrchestrator.java`
+- `nutrition-service/src/main/java/org/example/nutritionservice/service/recommendation/RecommendationApiService.java`
+- `nutrition-service/src/main/java/org/example/nutritionservice/domain/recommendation/*` lien quan: `DishCandidate`, `DishWithServing`, `MealCombination`, `MealTarget`, `PerMealConfig`, `RecommendedMeal`
+- `nutrition-service/src/main/java/org/example/nutritionservice/dto/request/SystemConfigUpdateRequest.java`
+- `nutrition-service/src/main/java/org/example/nutritionservice/dto/response/SystemConfigResponse.java`
+- `nutrition-service/src/main/java/org/example/nutritionservice/dto/response/DishSuggestionResponse.java`
+- `nutrition-service/src/main/java/org/example/nutritionservice/dto/response/MealSuggestionResponse.java`
+- `nutrition-service/src/main/java/org/example/nutritionservice/dto/response/SwapResultResponse.java`
+- `nutrition-service/src/main/java/org/example/nutritionservice/dto/request/SwapDishRequest.java`
+- `nutrition-service/src/main/java/org/example/nutritionservice/controller/RecommendationController.java`
+- `nutrition-service/src/main/java/org/example/nutritionservice/controller/admin/AdminConfigController.java`
+- `nutrition-service/src/main/java/org/example/nutritionservice/service/config/SystemConfigServiceImpl.java`
+- `nutrition-service/src/test/java/org/example/nutritionservice/service/recommendation/RecommendationApiServiceTest.java`
 
 ## Cac file da sua
 
-### Da commit truoc do
+### Da commit trong dot refactor nay
 
-- Step 1: cac file domain/repository cho `MealLog`, `MealLogDish`, `MealStatus`, `MealType`.
-- Step 2: cac file domain/repository cho `FavoriteDish`.
-- Step 3: cac file core recommendation va test lien quan, bao gom repository mon an dung cho recommendation.
-
-### Dang sua o Step 4, chua commit
-
-- `api-gateway/src/main/resources/application.yml`
-- `common/src/main/java/org/example/security/HeaderAuthenticationFilter.java`
-- `nutrition-service/src/main/java/org/example/nutritionservice/controller/FavoriteDishController.java`
-- `nutrition-service/src/main/java/org/example/nutritionservice/controller/RecommendationController.java`
-- `nutrition-service/src/main/java/org/example/nutritionservice/dto/request/ConfirmMealRequest.java`
-- `nutrition-service/src/main/java/org/example/nutritionservice/dto/request/RecommendFullDayRequest.java`
-- `nutrition-service/src/main/java/org/example/nutritionservice/dto/request/SwapDishRequest.java`
-- `nutrition-service/src/main/java/org/example/nutritionservice/dto/response/DailyPlanResponse.java`
-- `nutrition-service/src/main/java/org/example/nutritionservice/dto/response/DishSuggestionResponse.java`
-- `nutrition-service/src/main/java/org/example/nutritionservice/dto/response/MealCombinationResponse.java`
-- `nutrition-service/src/main/java/org/example/nutritionservice/dto/response/MealLogHistoryResponse.java`
-- `nutrition-service/src/main/java/org/example/nutritionservice/dto/response/MealSuggestionResponse.java`
-- `nutrition-service/src/main/java/org/example/nutritionservice/dto/response/SwapResultResponse.java`
-- `nutrition-service/src/main/java/org/example/nutritionservice/exception/RecommendationExceptionHandler.java`
-- `nutrition-service/src/main/java/org/example/nutritionservice/exception/RecommendationTooComplexException.java`
-- `nutrition-service/src/main/java/org/example/nutritionservice/repository/meallog/MealLogDishRepository.java`
-- `nutrition-service/src/main/java/org/example/nutritionservice/service/favorite/FavoriteDishService.java`
-- `nutrition-service/src/main/java/org/example/nutritionservice/service/meallog/MealLogService.java`
+- `nutrition-service/src/main/java/org/example/nutritionservice/service/recommendation/DishFilterService.java`
+- `nutrition-service/src/main/java/org/example/nutritionservice/service/recommendation/RecommendationOrchestrator.java`
 - `nutrition-service/src/main/java/org/example/nutritionservice/service/recommendation/BruteForceEngine.java`
+- `nutrition-service/src/main/resources/db/data.sql`
+- `nutrition-service/src/main/java/org/example/nutritionservice/domain/recommendation/SlotAlternative.java`
+- `nutrition-service/src/main/java/org/example/nutritionservice/dto/response/DishOptionResponse.java`
+- `nutrition-service/src/main/java/org/example/nutritionservice/dto/response/DishSuggestionResponse.java`
+- `nutrition-service/src/main/java/org/example/nutritionservice/dto/response/MealSuggestionResponse.java`
+- `nutrition-service/src/main/java/org/example/nutritionservice/domain/recommendation/RecommendedMeal.java`
 - `nutrition-service/src/main/java/org/example/nutritionservice/service/recommendation/RecommendationApiService.java`
-- `nutrition-service/src/test/java/org/example/nutritionservice/service/meallog/MealLogServiceTest.java`
 - `nutrition-service/src/test/java/org/example/nutritionservice/service/recommendation/RecommendationApiServiceTest.java`
+- `nutrition-service/src/main/java/org/example/nutritionservice/dto/request/SystemConfigUpdateRequest.java`
+- `nutrition-service/src/main/java/org/example/nutritionservice/dto/response/SystemConfigResponse.java`
+- `nutrition-service/src/main/java/org/example/nutritionservice/service/config/SystemConfigServiceImpl.java`
 
-### Tai lieu dang co thay doi rieng trong worktree
+### Dang sua/chua commit
 
-- `doc/HuongDanXayDungFeatureDeXuatThucDon.md` dang o trang thai `AM`.
-- `doc/nghiep_vu_de_xuat_thuc_don_v3.md` dang o trang thai `A`.
-- Can bao toan cac thay doi nay, khong revert va khong dua vao commit Step 4 neu nguoi dung khong yeu cau ro.
+- `doc/codex-handoff.md` vua duoc cap nhat bo sung context nay.
+
+### File tai lieu dang untracked, can giu nguyen
+
+- `doc/HuongDanRefactor_v3_2.md`
+- `doc/nghiep_vu_de_xuat_thuc_don_v3.3.md`
+
+Khong tu y xoa/revert hai file nay. Chung la tai lieu user dua vao de refactor.
 
 ## Logic hien tai da hieu
 
-### Tien do da chot
+### Thay doi nghiep vu v3.3 can implement
 
-- Step 1 da them lich su bua an va chi tiet mon an da xac nhan.
-- Step 2 da them mon yeu thich theo user.
-- Step 3 da tach core recommendation de tinh ung vien bua an, diem so, penalty va qua trinh chon ket qua.
-- Step 4 dua core logic ra API, them confirm meal log, history, swap dish va favorite dish API.
+- Alternatives khong con la list full combo `alternativeCombinations`; response moi dung `slotAlternatives`.
+- Moi dish trong `topCombination.dishes` co `slotKey` dang `CHINH_0`, `RAU_0`, `TINH_BOT_0`, ...
+- Diversity:
+  - Top combos group theo main key, moi main key chi lay 1 dai dien.
+  - Neu `nMain >= 2`, main key la danh sach dish id slot CHINH da sort va join.
+  - Co config `filter.forbid_same_food_group_in_main`, default true, de cam cap 2 mon CHINH cung food group.
+- Swap logic moi (chua lam) se pin tat ca slot hien tai, thay slot user chon, va toi uu lai serving only.
+- Suggestion logic moi (chua lam) chi goi y doi mon neu sau khi toi uu serving score van thap.
 
-### API Step 4 da co
+### Phan A da lam
 
-- `POST /api/recommendation/full-day`
-- `POST /api/recommendation/swap-dish`
-- `POST /api/meal-log/confirm`
-- `GET /api/meal-log/history`
-- `POST /api/favorite-dishes/{dishId}`
-- `DELETE /api/favorite-dishes/{dishId}`
-- `GET /api/favorite-dishes`
+- A1: `DishFilterService.filterCandidatesForSlot` nhan them `dishesNeededInSlot`.
+  - Filter chia target theo so mon trong slot.
+  - Dung bien moi `[0.5x, 1.5x]`.
+  - `RecommendationOrchestrator` truyen nguyen slot target + slot count.
+- A2: `BruteForceEngine` them early prune trong recursion serving.
+  - Neu kcal hien tai + max phan con lai van thieu, prune.
+  - Neu kcal hien tai + min phan con lai chac chan vuot, prune.
+- A3: giam `filter.serving_steps` default tu 7 muc xuong 5 muc `[0.5,0.75,1.0,1.5,2.0]`, combo steps giu `[0.75,1.0,1.25,1.5]`.
 
-### Hanh vi quan trong
+### Phan B da lam
 
-- Full-day recommendation validate cau hinh plan va canh bao constitution truoc khi goi orchestrator.
-- Truong hop `BEO_PHI` ket hop goal `TANG` ma chua confirm se tra warning va khong tra danh sach bua an.
-- Goi full-day chi sinh goi y, khong ghi `meal_log`.
-- Confirm meal upsert theo `(userId, mealDate, mealType)`, xoa chi tiet mon cu cua meal log do roi luu snapshot moi.
-- Swap thay mon trong cung slot, tinh lai score/penalty/history va tim lai serving grid cho cac mon giu nguyen neu can.
-- Ket qua daily plan dang mang them `goalCode` va `planType` de swap co du context tinh lai.
-- Khi brute-force vuot nguong 50 trieu combination, exception duoc map thanh HTTP 422.
-- Nutrition service nhan duoc ca header `X-User-Id`, `X-Username`, `X-Roles` va cac header legacy `userId`, `username`, `userRoles`.
-- API gateway da mo route cho recommendation, meal log va favorite dish.
+- B1:
+  - Them `SlotAlternative` internal domain.
+  - Them `DishOptionResponse`.
+  - Them `slotKey` vao `DishSuggestionResponse`.
+  - Doi `MealSuggestionResponse` tu `alternativeCombinations` sang `slotAlternatives`.
+- B2:
+  - `BruteForceEngine.findTopK` dung buffer `topK * 5`, sort score desc, group diverse theo main key.
+  - `buildDishCombinations` filter combo co 2 mon CHINH cung `foodGroupCode` neu config flag true.
+- B3:
+  - `BruteForceEngine.computeSlotAlternatives(...)` tinh alternatives cho tung slot.
+  - Alternatives giu cac slot khac, thay 1 candidate, thu serving steps, check weight + kcal deviation 25%, score theo macro score - penalty cua top combo.
+  - Slot CHINH alternatives da diversity food group, khong cung group voi CHINH trong top combo.
+  - `RecommendedMeal` giu `candidatesPerSlot` de map response.
+  - `RecommendationApiService.toMealResponse` tra `slotAlternatives`.
+  - `toCombinationResponse` tao `slotKey` cho tung dish.
+- B4:
+  - Them config seed:
+    - `display.slot_alternatives_count = 10`
+    - `filter.forbid_same_food_group_in_main = true`
+  - Admin `GET/PUT /api/admin/configs/system` expose/update duoc:
+    - `filter.forbidSameFoodGroupInMain`
+    - `display.slotAlternativesCount`
 
 ## Bug/van de con lai
 
-- Step 4 chua commit va chua push vi dang dung tai checkpoint review Part 1.
-- Chay full test cua `nutrition-service` co log Eureka registration/connection failure khi discovery server khong chay. Test van pass, nhung log nhieu.
-- Can tiep tuc canh giu cac thay doi tai lieu dang staged/modified rieng trong `doc`.
-- Da tung quan sat physical PK order cua bang favorite dish do Hibernate tao la `(dish_id, user_id)` trong khi huong dan mo ta `(user_id, dish_id)`. Can xem lai neu cac buoc sau yeu cau dung thu tu PK vat ly.
+- Phan A checkpoint theo huong dan chua dat voi DB local:
+  - Request `nMain=2,nRau=1,nCarb=1`, `forceCompute=false` van HTTP 422.
+  - Message: `Uoc tinh 305662500 to hop`.
+  - Candidate sau filter cho bua toi: CHINH=66, RAU=19, TINH_BOT=12.
+  - `forceCompute=true` khong xong trong 120s; prune co chay nhung runtime van qua lau.
+  - User da chap nhan: "Khong sao, cu thuc hien het cac noi dung can chinh sua, con ket qua thi toi uu sau."
+- Debug log prune hien tai co the rat nhieu neu bat DEBUG, anh huong performance khi force compute. Can can nhac giam log ve trace hoac sample khi toi uu sau.
+- `nMain=2` performance/cap can toi uu rieng sau khi hoan thanh cac thay doi contract.
+- `spring-boot:run` mac dinh chay testCompile; neu constructor service thay doi thi test compile co the fail truoc khi app start. Da cap nhat `RecommendationApiServiceTest` cho dependency moi.
+- Test co log Eureka connection refused neu discovery-server khong chay; tests van pass.
+- Hai file doc `doc/HuongDanRefactor_v3_2.md` va `doc/nghiep_vu_de_xuat_thuc_don_v3.3.md` dang untracked.
+- Handoff nay dang modified sau commit B4; neu can luu tren git thi user co the yeu cau commit rieng, con hien tai dung de compact.
 
 ## Command da chay va ket qua chinh
 
-### Commit/push cac step truoc
+### Commit refactor da tao
 
-- Step 1:
-  - Commit `da26d6a`
-  - Message `feat: hoan thanh step 1 lich su bua an`
-  - Da push len `origin/feature-DeXuatThucDon`
-- Step 2:
-  - Commit `a47462f`
-  - Message `feat: hoan thanh step 2 mon yeu thich`
-  - Da push len `origin/feature-DeXuatThucDon`
-- Step 3:
-  - Commit `d60e3d5`
-  - Message `feat: hoan thanh step 3 logic de xuat thuc don`
-  - Da push len `origin/feature-DeXuatThucDon`
+- `97353ec feat: hoan thanh step A1 filter ung vien`
+- `d9cea97 feat: hoan thanh step A2 early prune`
+- `24a726e feat: hoan thanh step A3 giam serving steps`
+- `c877a6e feat: hoan thanh step B1 slot alternatives DTO`
+- `d6b38bc feat: hoan thanh step B2 diversity main key`
+- `27ab522 feat: hoan thanh step B3 slot alternatives`
+- `e64a402 feat: hoan thanh step B4 cau hinh slot alternatives`
 
-### Verify Step 4
+### Verify da chay
 
-- `.\mvnw clean compile -pl common,api-gateway,nutrition-service`
-  - Ket qua: build success.
-- `.\mvnw test -pl nutrition-service`
-  - Ket qua: build success, 6 tests pass.
-  - Ghi chu: co log Eureka connection refusal neu discovery server khong chay.
 - `.\mvnw clean compile -pl nutrition-service`
-  - Ket qua: build success theo yeu cau verify sau moi step.
+  - Da chay sau cac step A/B, build success.
+- `.\mvnw test -pl nutrition-service`
+  - Sau B3: build success, 6 tests pass.
+  - Sau B4: build success, 6 tests pass.
+- DB update/verify qua MySQL container:
+  - `filter.serving_steps = [0.5,0.75,1.0,1.5,2.0]`
+  - `filter.combo_serving_steps = [0.75,1.0,1.25,1.5]`
+  - `display.slot_alternatives_count = 10`
+  - `filter.forbid_same_food_group_in_main = true`
+- Smoke API sau B3:
+  - `POST http://localhost:8888/api/recommendation/full-day`, `nMain=1`, HTTP 200.
+  - Response co `slotAlternatives`.
+  - Response khong con `alternativeCombinations`.
+  - `topCombination.dishes` co `slotKey`: `CHINH_0`, `RAU_0`, `TINH_BOT_0`.
+- Admin API sau B4:
+  - `GET /api/admin/configs/system` HTTP 200, co `forbidSameFoodGroupInMain`, `slotAlternativesCount`.
+  - `PUT /api/admin/configs/system` HTTP 200 voi cung gia tri, save OK.
 
-### Manual check Step 4
+### Local service/process
 
-- Da start local discovery server va nutrition service.
-- Da kiem tra Eureka thay `NUTRITION-SERVICE` tra ve HTTP 200.
-- Da goi full-day warning case va nhan warning voi `meals=[]`.
-- Da goi full-day confirmed case va nhan danh sach bua con lai trong ngay cung score.
-- Da xac nhan full-day khong tao meal log truoc khi confirm.
-- Da kiem tra favorite flow `POST -> GET -> DELETE`.
-- Da confirm cung bua an hai lan, ket qua con mot `meal_log` va mot dong dish snapshot tuong ung.
-- Da kiem tra history tra ve ban ghi vua confirm.
-- Da kiem tra swap tra bua an da doi mon va score duoc tinh lai.
-- Da xoa row test local cua user `user-step4` va stop cac process local da start.
+- Da start nutrition-service nhieu lan bang `.\mvnw spring-boot:run -pl nutrition-service` de smoke test.
+- Da stop cac process listen port 8888 sau khi test.
+- MySQL container dang chay: `mysql_container`.
 
 ## Viec can lam tiep theo
 
-1. Review diff Step 4 va doi chieu lai voi checkpoint trong huong dan.
-2. Neu review dat, commit rieng Step 4, tranh tron cac file tai lieu neu nguoi dung khong yeu cau.
-3. Push commit Step 4 len branch `feature-DeXuatThucDon` khi duoc yeu cau tiep tuc.
-4. Chi bat dau Part 2/step tiep theo sau checkpoint review theo huong dan hoac khi nguoi dung chi dao ro.
-5. Tiep tuc chay `.\mvnw clean compile -pl nutrition-service` sau moi step feature tiep theo.
+1. Sau compact, doc file nay truoc.
+2. Kiem tra `git status --short`; du kien chi con:
+   - modified `doc/codex-handoff.md`
+   - untracked `doc/HuongDanRefactor_v3_2.md`
+   - untracked `doc/nghiep_vu_de_xuat_thuc_don_v3.3.md`
+3. Tiep tuc Phan C trong `doc/HuongDanRefactor_v3_2.md`.
+4. Step tiep theo la **C1: Refactor `SwapDishRequest` schema va `SwapResultResponse` schema**.
+5. Sau C1 phai compile `.\mvnw clean compile -pl nutrition-service`, bao user review, khong commit neu user chua OK.
+6. Sau user OK moi commit C1 va lam C2.
+7. Sau C2 can test swap:
+   - swap 1 slot, score khong sut ve ~16 do serving cu.
+   - swap 2 lan voi `pinnedDishes`, slot da pin duoc giu.
+   - suggestion null khi score tot.
+   - suggestion khac null khi score thap.
+   - `nMain=2` moi slot co the swap rieng.
 
 ## Nhung dieu khong duoc lam
 
-- Khong revert, reset, checkout de mat thay doi hien co trong worktree.
-- Khong commit chung cac tai lieu dang co trang thai rieng trong `doc` neu chua co yeu cau ro.
-- Khong bo qua checkpoint review giua cac step neu huong dan yeu cau dung lai.
-- Khong ghi meal log trong luong de xuat full-day; chi luu sau confirm.
-- Khong thay doi contract header/gateway/security Step 4 ma khong kiem tra lai API flow.
-- Khong bo qua lenh compile bat buoc sau moi step.
+- Khong revert/reset/checkout mat thay doi hien co.
+- Khong tu y xoa hoac commit hai file doc untracked neu user chua yeu cau.
+- Khong tu y push neu user chua yeu cau.
+- Khong ghi meal log khi goi full-day recommendation; full-day chi sinh goi y.
+- Khong quay lai `alternativeCombinations`; contract moi la `slotAlternatives`.
+- Khong auto-doi mon khac trong swap moi; swap Phan C phai pin mon hien tai va chi toi uu serving.
+- Khong bo qua compile sau moi step.
+- Khong nhay qua checkpoint review step neu user chua OK.
