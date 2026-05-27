@@ -31,6 +31,9 @@ spring:
     username: guest
     password: guest
 app:
+  services:
+    health-data:
+      url: ${HEALTH_DATA_SERVICE_URL:http://localhost:8085}
   rabbitmq:
     exchange:
       user-events: user.events.exchange

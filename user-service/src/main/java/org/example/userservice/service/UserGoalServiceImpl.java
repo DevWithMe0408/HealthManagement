@@ -10,6 +10,7 @@ import org.example.userservice.repository.UserGoalRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
@@ -20,6 +21,7 @@ import java.util.Optional;
 public class UserGoalServiceImpl implements UserGoalService {
 
     private final UserGoalRepository repo;
+    private final HealthDataClient healthDataClient;
 
     @Override
     public Optional<UserGoalResponse> getCurrent(String userId) {
@@ -39,6 +41,11 @@ public class UserGoalServiceImpl implements UserGoalService {
         LocalDate today = LocalDate.now();
         repo.deactivateCurrentGoal(userId, today);
 
+        BigDecimal startWeight = healthDataClient.fetchCurrentWeightKg(userId);
+        if (startWeight == null) {
+            log.info("No current weight available for userId={}, startWeightKg will be null", userId);
+        }
+
         UserGoal newGoal = UserGoal.builder()
                 .id(UuidV7Generator.generate())
                 .userId(userId)
@@ -47,12 +54,13 @@ public class UserGoalServiceImpl implements UserGoalService {
                 .endDate(null)
                 .isActive(true)
                 .targetWeightKg(req.getTargetWeightKg())
+                .startWeightKg(startWeight)
                 .targetDurationMonths(req.getTargetDurationMonths() != null ? req.getTargetDurationMonths() : 6)
                 .note(req.getNote())
                 .build();
 
         UserGoal saved = repo.save(newGoal);
-        log.info("Updated goal for userId {}: {}", userId, req.getGoalCode());
+        log.info("Updated goal for userId {}: {}, startWeight={}", userId, req.getGoalCode(), startWeight);
         return toResponse(saved);
     }
 
@@ -64,6 +72,7 @@ public class UserGoalServiceImpl implements UserGoalService {
                 .endDate(goal.getEndDate())
                 .isActive(Boolean.TRUE.equals(goal.getIsActive()))
                 .targetWeightKg(goal.getTargetWeightKg())
+                .startWeightKg(goal.getStartWeightKg())
                 .targetDurationMonths(goal.getTargetDurationMonths())
                 .note(goal.getNote())
                 .build();

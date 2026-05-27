@@ -45,6 +45,9 @@ public class UserGoal {
     @Column(name = "target_weight_kg", precision = 5, scale = 2)
     private BigDecimal targetWeightKg;
 
+    @Column(name = "start_weight_kg", precision = 5, scale = 2)
+    private BigDecimal startWeightKg;
+
     @Column(name = "target_duration_months")
     private Integer targetDurationMonths;
 

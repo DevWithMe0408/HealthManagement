@@ -19,6 +19,7 @@ public class UserGoalResponse {
     private LocalDate endDate;
     private Boolean isActive;
     private BigDecimal targetWeightKg;
+    private BigDecimal startWeightKg;
     private Integer targetDurationMonths;
     private String note;
 }

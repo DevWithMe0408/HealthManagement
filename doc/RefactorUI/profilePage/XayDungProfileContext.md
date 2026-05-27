@@ -2,7 +2,7 @@
 
 Ngay tao: 2026-05-27
 
-Cap nhat gan nhat: 2026-05-27 - Phase A BE completed in working tree, pending user review/commit.
+Cap nhat gan nhat: 2026-05-27 - Phase A committed, Phase B BE completed in working tree, pending user review/commit.
 
 Tai lieu goc: `doc/RefactorUI/profilePage/HuongDanXayDungProfilePage.md`
 
@@ -15,10 +15,17 @@ Muc dich file nay:
 
 Backend hien tai CHUA san sang day du cho Profile MVP theo huong dan.
 
-Phase A cua `HuongDanXayDungProfilePage_BE.md` da duoc thuc hien trong working tree, chua commit:
+Phase A cua `HuongDanXayDungProfilePage_BE.md` da commit:
+- Commit: `9c9bea3 refactor(health-data): standardize profile metrics responses`
 - `health-data-service` endpoints da duoc wrap ve `DataResponse<T>`.
 - Compile module `health-data-service` pass voi `.\mvnw -pl health-data-service -am test -DskipTests`.
-- Can user review/OK truoc khi commit va sang Phase B.
+
+Phase B da duoc thuc hien trong working tree, chua commit:
+- Them `startWeightKg` vao `UserGoal` va `UserGoalResponse`.
+- Them `RestTemplateConfig` va `HealthDataClient`.
+- `PUT /api/user-goals/current` se snapshot current weight tu `GET /api/health-data/dashboard-metrics`.
+- Compile module `user-service` pass voi `.\mvnw -pl user-service -am test -DskipTests`.
+- Can user review/OK truoc khi commit va sang Phase C.
 
 Da co cac API nen tang:
 - Lay current user profile: `GET /api/user/currentUser`
@@ -29,8 +36,6 @@ Da co cac API nen tang:
 - Lay constitution: `GET /api/health-data/constitution`
 
 Con thieu cac phan bat buoc cua Profile MVP:
-- Chua co `startWeightKg` trong `UserGoal`, `UserGoalResponse`, va DB column `start_weight_kg`.
-- Chua co `HealthDataClient` va `RestTemplateConfig` de snapshot can nang khi doi goal.
 - Chua co endpoint `PUT /api/auth/change-password`.
 - Chua co `ChangePasswordRequest`.
 - Chua co `AUTH-011`, `AUTH-012` trong `ErrorCode`.
@@ -40,7 +45,9 @@ Con thieu cac phan bat buoc cua Profile MVP:
 
 ### Phase A - Refactor health-data-service to DataResponse
 
-Trang thai: DA THUC HIEN TRONG WORKING TREE, CHUA COMMIT, DANG CHO USER REVIEW.
+Trang thai: DA COMMIT.
+
+Commit: `9c9bea3 refactor(health-data): standardize profile metrics responses`
 
 Files updated:
 - `health-data-service/src/main/java/org/example/healthdataservice/controller/HealthDataController.java`
@@ -61,11 +68,38 @@ Verification:
 - Ket qua: BUILD SUCCESS.
 - Chua chay Postman vi can service/runtime va token hop le.
 
+### Phase B - startWeightKg and snapshot current weight
+
+Trang thai: DA THUC HIEN TRONG WORKING TREE, CHUA COMMIT, DANG CHO USER REVIEW.
+
+Files updated/added:
+- `user-service/src/main/java/org/example/userservice/entity/UserGoal.java`
+- `user-service/src/main/java/org/example/userservice/dto/response/UserGoalResponse.java`
+- `user-service/src/main/java/org/example/userservice/service/UserGoalServiceImpl.java`
+- `user-service/src/main/java/org/example/userservice/config/RestTemplateConfig.java`
+- `user-service/src/main/java/org/example/userservice/service/HealthDataClient.java`
+- `user-service/src/main/resources/application.yml`
+
+Thay doi:
+- Add nullable column mapping `start_weight_kg` via `UserGoal.startWeightKg`.
+- Add `startWeightKg` to `UserGoalResponse`.
+- `UserGoalServiceImpl.updateCurrent()` calls `HealthDataClient.fetchCurrentWeightKg(userId)` before creating new active goal.
+- If snapshot fails or no weight exists, goal update still succeeds and `startWeightKg = null`.
+- `HealthDataClient` calls `GET /api/health-data/dashboard-metrics` and parses Phase A contract: `body.data.weight.value`.
+- RestTemplate timeout: 2s connect / 3s read.
+- Config added: `app.services.health-data.url`, default `${HEALTH_DATA_SERVICE_URL:http://localhost:8085}`.
+
+Verification:
+- Da chay `.\mvnw -pl user-service -am test -DskipTests`.
+- Da chay them `.\mvnw -pl user-service,health-data-service -am test -DskipTests`.
+- Ket qua: BUILD SUCCESS.
+- Chua chay Postman vi can service/runtime va token hop le.
+
 ## Danh gia backend theo tung muc
 
 ### A1 - start_weight_kg cho user_goals
 
-Trang thai: CHUA LAM.
+Trang thai: DA LAM TRONG WORKING TREE, CHUA COMMIT.
 
 File da kiem tra:
 - `user-service/src/main/java/org/example/userservice/entity/UserGoal.java`
@@ -95,13 +129,12 @@ Can bo sung:
 - Set `startWeightKg` khi tao goal moi trong `updateCurrent()`.
 
 FE impact:
-- Section Goal progress bar khong the tinh dung neu BE chua tra `startWeightKg`.
-- FE phai render fallback neu `startWeightKg == null`.
-- Truoc khi BE xong, FE co the build UI nhung progress bar chi nen hien empty/fallback.
+- Section Goal progress bar co the dung `startWeightKg` sau khi Phase B duoc commit/deploy.
+- FE van phai render fallback neu `startWeightKg == null` cho old rows hoac khi health-data unavailable.
 
 ### A2 - Snapshot current weight khi doi goal
 
-Trang thai: CHUA LAM.
+Trang thai: DA LAM TRONG WORKING TREE, CHUA COMMIT.
 
 File da kiem tra:
 - `user-service/src/main/java/org/example/userservice/service/UserGoalServiceImpl.java`
@@ -110,7 +143,7 @@ File da kiem tra:
 - `health-data-service/src/main/java/org/example/healthdataservice/dto/response/DashboardMetricsResponse.java`
 - `health-data-service/src/main/java/org/example/healthdataservice/dto/response/MetricData.java`
 
-Chua ton tai:
+Da ton tai trong working tree:
 - `user-service/src/main/java/org/example/userservice/config/RestTemplateConfig.java`
 - `user-service/src/main/java/org/example/userservice/service/HealthDataClient.java`
 - Config `app.services.health-data.url`
@@ -454,16 +487,13 @@ interface UserGoalResponseCurrentBackend {
   endDate: string | null;
   isActive: boolean;
   targetWeightKg: number | null;
+  startWeightKg: number | null;
   targetDurationMonths: number | null;
   note: string | null;
 }
 ```
 
-Sau khi BE lam A1/A2 can them:
-
-```ts
-startWeightKg: number | null;
-```
+Truoc Phase B response chua co `startWeightKg`; sau Phase B trong working tree field nay da co.
 
 `PUT /api/user-goals/current` payload:
 
@@ -541,12 +571,9 @@ Uu tien 1 - bat buoc cho Security section:
 - Test wrong current password, same password, min length.
 
 Uu tien 2 - bat buoc cho Goal progress:
-- Them `startWeightKg` vao entity/DTO/mapper.
-- Them `RestTemplateConfig`.
-- Them `HealthDataClient`.
-- Sua `UserGoalServiceImpl.updateCurrent()` snapshot current weight.
-- Implement client theo `DataResponse` shape sau Phase A cua `/api/health-data/dashboard-metrics`.
-- Them config `app.services.health-data.url`.
+- DONE trong working tree, pending review/commit.
+- Postman can verify `PUT /api/user-goals/current` response co `data.startWeightKg`.
+- Postman can verify health-data down fallback van 200 va `startWeightKg = null`.
 
 Uu tien 3 - can cho Profile Header dung design:
 - Expose `email` trong `GET /api/user/currentUser`, hoac FE dung them `/api/user/account-details`.
@@ -590,9 +617,9 @@ Uu tien 4 - polish personal info:
 - [x] PBF preference endpoint da co va validate `FORMULA`/`MODEL_1`.
 - [x] Constitution endpoint da co.
 - [x] Dashboard metrics endpoint da co current weight.
-- [ ] `startWeightKg` migration/field/response chua co.
-- [ ] Snapshot current weight khi doi goal chua co.
-- [ ] Cross-service RestTemplate client chua co.
+- [x] `startWeightKg` migration/field/response da co trong working tree.
+- [x] Snapshot current weight khi doi goal da co trong working tree.
+- [x] Cross-service RestTemplate client da co trong working tree.
 - [ ] Change password endpoint chua co.
 - [ ] Error codes `AUTH-011`, `AUTH-012` chua co.
 - [ ] `createdAt`/joined date chua expose cho FE.
@@ -600,4 +627,4 @@ Uu tien 4 - polish personal info:
 
 ## Compact summary
 
-Profile BE status ngay 2026-05-27: Phase A da duoc thuc hien trong working tree va chua commit; health-data endpoints lien quan da wrap `DataResponse<T>` va compile pass. Backend da co currentUser, account-details, update profile, preferences, user-goals current/history, dashboard metrics, constitution. Chua co change-password va chua co startWeightKg/snapshot weight. Sau Phase A, HealthDataClient trong Phase B nen doc `body.data.weight.value`. Gateway route `/api/auth/**` qua JwtFilter va chi bypass login/register/refresh, vi vay future `PUT /api/auth/change-password` se require JWT dung nhu mong doi. FE co the build Personal Info, Health Settings, Goal history UI ngay; Security submit va Goal progress can BE hoan tat truoc khi integration full. Header email can lay them tu `/api/user/account-details`; joined date chua co API that.
+Profile BE status ngay 2026-05-27: Phase A da commit `9c9bea3`; health-data endpoints lien quan da wrap `DataResponse<T>` va compile pass. Phase B da xong trong working tree, chua commit; user goals co `startWeightKg`, snapshot client doc `body.data.weight.value`, va compile user-service pass. Backend da co currentUser, account-details, update profile, preferences, user-goals current/history, dashboard metrics, constitution. Chua co change-password. Gateway route `/api/auth/**` qua JwtFilter va chi bypass login/register/refresh, vi vay future `PUT /api/auth/change-password` se require JWT dung nhu mong doi. FE co the build Personal Info, Health Settings, Goal history UI ngay; Security submit can BE Phase D, Header email/createdAt can BE Phase C.
