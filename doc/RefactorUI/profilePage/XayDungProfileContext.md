@@ -2,7 +2,7 @@
 
 Ngay tao: 2026-05-27
 
-Cap nhat gan nhat: 2026-05-27 - Phase A/B/C committed, Phase D BE completed in working tree, pending user review/commit.
+Cap nhat gan nhat: 2026-05-27 - Phase A/B/C/D committed, final backend compile verification passed.
 
 Tai lieu goc: `doc/RefactorUI/profilePage/HuongDanXayDungProfilePage.md`
 
@@ -36,14 +36,18 @@ Phase C da commit:
 - Neu client omit phone, backend khong clear phone ngoai y muon.
 - Compile module `user-service` pass voi `.\mvnw -pl user-service -am test -DskipTests`.
 
-Phase D da duoc thuc hien trong working tree, chua commit:
+Phase D da commit:
+- Commit: `0ed7256 feat(auth): add change-password endpoint`
 - Them `PUT /api/auth/change-password`.
 - Them `ChangePasswordRequest`.
 - Them `AuthService.changePassword(...)` va implementation trong `AuthServiceImpl`.
 - Them `AUTH-011`, `AUTH-012` trong `ErrorCode`.
 - BE enforce new password min 8, max 100, co it nhat 1 chu HOA va 1 chu so.
 - Compile module `user-service` pass voi `.\mvnw -pl user-service -am test -DskipTests`.
-- Can user review/OK truoc khi commit va sang final verify.
+
+Final verification da chay:
+- `.\mvnw clean install -DskipTests`
+- Ket qua: BUILD SUCCESS toan bo reactor.
 
 Da co cac API nen tang:
 - Lay current user profile: `GET /api/user/currentUser`
@@ -148,7 +152,9 @@ Verification:
 
 ### Phase D - change password endpoint
 
-Trang thai: DA THUC HIEN TRONG WORKING TREE, CHUA COMMIT, DANG CHO USER REVIEW.
+Trang thai: DA COMMIT.
+
+Commit: `0ed7256 feat(auth): add change-password endpoint`
 
 Files updated/added:
 - `common/src/main/java/org/example/web/exception/ErrorCode.java`
@@ -172,6 +178,20 @@ Verification:
 - Da chay them `.\mvnw -pl user-service,health-data-service -am test -DskipTests`.
 - Ket qua: BUILD SUCCESS.
 - Chua chay Postman vi can service/runtime va token hop le.
+
+### Phase E - final compile verification
+
+Trang thai: DA CHAY.
+
+Verification:
+- Da chay `.\mvnw clean install -DskipTests`.
+- Ket qua: BUILD SUCCESS toan bo reactor: api-gateway, common, user-service, health-data-service, discovery-server, nutrition-service, notification-service.
+
+Chua verify runtime:
+- Chua run `docker-compose up` vi compose hien tai chu yeu khai bao mysql/rabbitmq, cac service app dang comment.
+- Chua chay Postman tests 1-14 vi can runtime services va valid JWT.
+- Chua verify DB schema `start_weight_kg`/`created_at` trong MySQL runtime.
+- User cu co the can SQL backfill: `UPDATE user SET created_at = NOW() WHERE created_at IS NULL;`
 
 ## Danh gia backend theo tung muc
 
@@ -692,11 +712,11 @@ Uu tien 4 - polish personal info:
 - [x] `startWeightKg` migration/field/response da co trong working tree.
 - [x] Snapshot current weight khi doi goal da co trong working tree.
 - [x] Cross-service RestTemplate client da co trong working tree.
-- [x] Change password endpoint da co trong working tree.
-- [x] Error codes `AUTH-011`, `AUTH-012` da co trong working tree.
-- [x] `createdAt`/joined date da expose trong `currentUser` trong working tree.
-- [x] Clear phone ve null da duoc backend support trong working tree.
+- [x] Change password endpoint da commit.
+- [x] Error codes `AUTH-011`, `AUTH-012` da commit.
+- [x] `createdAt`/joined date da expose trong `currentUser` da commit.
+- [x] Clear phone ve null da commit.
 
 ## Compact summary
 
-Profile BE status ngay 2026-05-27: Phase A da commit `9c9bea3`; Phase B da commit `3446d37`; Phase C da commit `30942c7`; Phase D da xong trong working tree, chua commit. Health-data endpoints lien quan da wrap `DataResponse<T>`. User goals co `startWeightKg`, snapshot client doc `body.data.weight.value`. Current user profile co `email`, `createdAt`; update profile clear phone duoc khi request explicit null. Change-password endpoint da co trong working tree voi `AUTH-011`/`AUTH-012` va password policy validation. Gateway route `/api/auth/**` qua JwtFilter va chi bypass login/register/refresh, vi vay `PUT /api/auth/change-password` require JWT dung nhu mong doi. Chua chay Postman/runtime va DB verify.
+Profile BE status ngay 2026-05-27: Phase A da commit `9c9bea3`; Phase B da commit `3446d37`; Phase C da commit `30942c7`; Phase D da commit `0ed7256`; final `.\mvnw clean install -DskipTests` BUILD SUCCESS. Health-data endpoints lien quan da wrap `DataResponse<T>`. User goals co `startWeightKg`, snapshot client doc `body.data.weight.value`. Current user profile co `email`, `createdAt`; update profile clear phone duoc khi request explicit null. Change-password endpoint da co voi `AUTH-011`/`AUTH-012` va password policy validation. Gateway route `/api/auth/**` qua JwtFilter va chi bypass login/register/refresh, vi vay `PUT /api/auth/change-password` require JWT dung nhu mong doi. Chua chay Postman/runtime va DB verify; user cu can backfill `created_at` neu null.
