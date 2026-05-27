@@ -196,6 +196,10 @@ public class RecommendationApiService {
         MealSuggestionResponse updatedMeal = MealSuggestionResponse.builder()
                 .mealType(currentMeal.getMealType())
                 .mealKcalTarget(currentMeal.getMealKcalTarget())
+                .kcalTarget(macroTarget.getKcal())
+                .proteinTarget(macroTarget.getProteinG())
+                .fatTarget(macroTarget.getFatG())
+                .carbTarget(macroTarget.getCarbG())
                 .topCombination(updatedCombination)
                 .slotAlternatives(slotAlternatives.entrySet().stream()
                         .collect(Collectors.toMap(
@@ -242,10 +246,17 @@ public class RecommendationApiService {
             RecommendedMeal meal,
             LoadedConfigs configs,
             Set<String> favorites) {
+        MealTarget mealTarget = meal.getMealTarget();
+        MacroTarget macroTarget = mealTarget.getMacroTarget();
+
         if (meal.getCombinations().isEmpty()) {
             return MealSuggestionResponse.builder()
-                    .mealType(meal.getMealTarget().getMealType())
-                    .mealKcalTarget(meal.getMealTarget().getMealKcal())
+                    .mealType(mealTarget.getMealType())
+                    .mealKcalTarget(mealTarget.getMealKcal())
+                    .kcalTarget(macroTarget.getKcal())
+                    .proteinTarget(macroTarget.getProteinG())
+                    .fatTarget(macroTarget.getFatG())
+                    .carbTarget(macroTarget.getCarbG())
                     .topCombination(null)
                     .slotAlternatives(Map.of())
                     .build();
@@ -269,8 +280,12 @@ public class RecommendationApiService {
                         LinkedHashMap::new
                 ));
         return MealSuggestionResponse.builder()
-                .mealType(meal.getMealTarget().getMealType())
-                .mealKcalTarget(meal.getMealTarget().getMealKcal())
+                .mealType(mealTarget.getMealType())
+                .mealKcalTarget(mealTarget.getMealKcal())
+                .kcalTarget(macroTarget.getKcal())
+                .proteinTarget(macroTarget.getProteinG())
+                .fatTarget(macroTarget.getFatG())
+                .carbTarget(macroTarget.getCarbG())
                 .topCombination(toCombinationResponse(topCombination, favorites))
                 .slotAlternatives(slotAlternatives)
                 .build();

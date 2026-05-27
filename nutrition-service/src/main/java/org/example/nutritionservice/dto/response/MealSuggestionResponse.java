@@ -24,6 +24,18 @@ public class MealSuggestionResponse {
     @NotNull
     private BigDecimal mealKcalTarget;
 
+    @NotNull
+    private BigDecimal kcalTarget;
+
+    @NotNull
+    private BigDecimal proteinTarget;
+
+    @NotNull
+    private BigDecimal fatTarget;
+
+    @NotNull
+    private BigDecimal carbTarget;
+
     @Valid
     private MealCombinationResponse topCombination;
 
