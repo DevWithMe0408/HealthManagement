@@ -5,6 +5,7 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.example.userservice.enums.Gender;
+import org.hibernate.annotations.CreationTimestamp;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -33,10 +34,15 @@ public class User {
     @JoinColumn(name = "auth_id", referencedColumnName = "id", nullable = false, unique = true)
     private Auth auth;
 
+    @CreationTimestamp
+    @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;
 
     private Integer age;
 
     @Column(name = "profile_completed", nullable = false)
     private Boolean profileCompleted = false;
+
+    @Transient
+    private boolean phoneProvided;
 }

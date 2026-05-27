@@ -160,10 +160,12 @@ public class UserController {
         userOpt.ifPresent(user -> {
             response.setUserId(user.getId());
             response.setName(user.getName());
+            response.setEmail(user.getAuth() != null ? user.getAuth().getEmail() : null);
             response.setPhone(user.getPhone());
             response.setBirthDate(user.getBirthDate());
             response.setGender(user.getGender());
             response.setProfileCompleted(Boolean.TRUE.equals(user.getProfileCompleted()));
+            response.setCreatedAt(user.getCreatedAt());
         });
         return response;
     }

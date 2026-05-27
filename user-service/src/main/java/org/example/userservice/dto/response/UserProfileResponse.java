@@ -6,6 +6,7 @@ import lombok.NoArgsConstructor;
 import org.example.userservice.enums.Gender;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Data
@@ -16,10 +17,12 @@ public class UserProfileResponse {
     private String username;
     private List<String> roles;
     private String name;
+    private String email;
     private String phone;
     private LocalDate birthDate;
     private Gender gender;
     private Boolean profileCompleted;
+    private LocalDateTime createdAt;
 
     public UserProfileResponse(String userId, String username, List<String> roles) {
         this.userId = userId;

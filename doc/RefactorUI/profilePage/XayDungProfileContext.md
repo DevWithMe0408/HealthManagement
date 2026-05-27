@@ -2,7 +2,7 @@
 
 Ngay tao: 2026-05-27
 
-Cap nhat gan nhat: 2026-05-27 - Phase A committed, Phase B BE completed in working tree, pending user review/commit.
+Cap nhat gan nhat: 2026-05-27 - Phase A/B committed, Phase C BE completed in working tree, pending user review/commit.
 
 Tai lieu goc: `doc/RefactorUI/profilePage/HuongDanXayDungProfilePage.md`
 
@@ -20,12 +20,21 @@ Phase A cua `HuongDanXayDungProfilePage_BE.md` da commit:
 - `health-data-service` endpoints da duoc wrap ve `DataResponse<T>`.
 - Compile module `health-data-service` pass voi `.\mvnw -pl health-data-service -am test -DskipTests`.
 
-Phase B da duoc thuc hien trong working tree, chua commit:
+Phase B da commit:
+- Commit: `3446d37 feat(user-goal): snapshot current weight on goal change`
 - Them `startWeightKg` vao `UserGoal` va `UserGoalResponse`.
 - Them `RestTemplateConfig` va `HealthDataClient`.
 - `PUT /api/user-goals/current` se snapshot current weight tu `GET /api/health-data/dashboard-metrics`.
 - Compile module `user-service` pass voi `.\mvnw -pl user-service -am test -DskipTests`.
-- Can user review/OK truoc khi commit va sang Phase C.
+
+Phase C da duoc thuc hien trong working tree, chua commit:
+- `GET /api/user/currentUser` tra them `email`, `createdAt`.
+- `UserResponseDTO` tra them `email`, `createdAt`.
+- `User.createdAt` co `@CreationTimestamp`.
+- `PUT /api/user/profile` clear phone duoc khi request co `phone: null` hoac `phoneNumber: null`.
+- Neu client omit phone, backend khong clear phone ngoai y muon.
+- Compile module `user-service` pass voi `.\mvnw -pl user-service -am test -DskipTests`.
+- Can user review/OK truoc khi commit va sang Phase D.
 
 Da co cac API nen tang:
 - Lay current user profile: `GET /api/user/currentUser`
@@ -39,7 +48,6 @@ Con thieu cac phan bat buoc cua Profile MVP:
 - Chua co endpoint `PUT /api/auth/change-password`.
 - Chua co `ChangePasswordRequest`.
 - Chua co `AUTH-011`, `AUTH-012` trong `ErrorCode`.
-- Header profile thieu `email` va `createdAt/joined` trong `GET /api/user/currentUser`.
 
 ## Phase execution log
 
@@ -70,7 +78,9 @@ Verification:
 
 ### Phase B - startWeightKg and snapshot current weight
 
-Trang thai: DA THUC HIEN TRONG WORKING TREE, CHUA COMMIT, DANG CHO USER REVIEW.
+Trang thai: DA COMMIT.
+
+Commit: `3446d37 feat(user-goal): snapshot current weight on goal change`
 
 Files updated/added:
 - `user-service/src/main/java/org/example/userservice/entity/UserGoal.java`
@@ -88,6 +98,37 @@ Thay doi:
 - `HealthDataClient` calls `GET /api/health-data/dashboard-metrics` and parses Phase A contract: `body.data.weight.value`.
 - RestTemplate timeout: 2s connect / 3s read.
 - Config added: `app.services.health-data.url`, default `${HEALTH_DATA_SERVICE_URL:http://localhost:8085}`.
+
+Verification:
+- Da chay `.\mvnw -pl user-service -am test -DskipTests`.
+- Da chay them `.\mvnw -pl user-service,health-data-service -am test -DskipTests`.
+- Ket qua: BUILD SUCCESS.
+- Chua chay Postman vi can service/runtime va token hop le.
+
+### Phase C - profile email/createdAt and safe phone clear
+
+Trang thai: DA THUC HIEN TRONG WORKING TREE, CHUA COMMIT, DANG CHO USER REVIEW.
+
+Files updated:
+- `user-service/src/main/java/org/example/userservice/entity/User.java`
+- `user-service/src/main/java/org/example/userservice/dto/request/UserRequestDTO.java`
+- `user-service/src/main/java/org/example/userservice/dto/response/UserProfileResponse.java`
+- `user-service/src/main/java/org/example/userservice/dto/response/UserResponseDTO.java`
+- `user-service/src/main/java/org/example/userservice/controller/UserController.java`
+- `user-service/src/main/java/org/example/userservice/mapper/UserMapper.java`
+- `user-service/src/main/java/org/example/userservice/service/UserServiceImpl.java`
+
+Thay doi:
+- Add `@CreationTimestamp` to `User.createdAt`.
+- Add transient `User.phoneProvided` to carry request intent after DTO mapping.
+- `UserRequestDTO` tracks whether `phone`/`phoneNumber` exists in request via custom setter.
+- `UserServiceImpl.updateUserProfile()` updates phone only when request included phone field. This supports explicit `null` clear without clearing phone on omitted field.
+- `UserProfileResponse` and `UserResponseDTO` now include `email`, `createdAt`.
+- `UserController.currentUser` maps `user.auth.email` and `user.createdAt`.
+- `UserMapper.toDTO()` maps `email`, `createdAt`.
+
+Intentional deviation from BE guide:
+- Did not add `@NotBlank/@NotNull` to `UserRequestDTO` in Phase C because no runtime/E2E onboarding verification is available in this session. This keeps existing partial-update behavior safer while still supporting Profile clear-phone.
 
 Verification:
 - Da chay `.\mvnw -pl user-service -am test -DskipTests`.
@@ -304,9 +345,9 @@ interface CurrentUserProfile {
 }
 ```
 
-Gap:
-- Khong co `email`.
-- Khong co `createdAt`/joined date.
+Sau Phase C trong working tree, response co them:
+- `email`
+- `createdAt`
 
 ### Account details
 
@@ -333,7 +374,7 @@ interface UserAccountDetails {
 FE co the dung endpoint nay de lay email cho Profile Header.
 
 Gap:
-- Van khong co `createdAt`.
+- Endpoint nay van chua expose `createdAt`; Profile FE co the uu tien `GET /api/user/currentUser` sau Phase C.
 
 ### Update personal profile
 
@@ -369,11 +410,10 @@ interface UserResponseDTO {
 }
 ```
 
-Important gap:
-- Backend update logic chi set field neu request value != null.
-- Neu FE gui `phone: null`, backend se KHONG xoa phone cu.
-- Huong dan goc noi FE gui `phone: data.phone || null`; voi backend hien tai cach nay khong clear duoc phone.
-- Neu can cho phep xoa phone, BE phai sua update logic de phan biet field absent va field explicit null, hoac chap nhan empty string.
+Sau Phase C trong working tree:
+- Neu request co field `phone` hoac `phoneNumber`, backend se update phone theo value do.
+- Neu value la `null`, phone duoc clear.
+- Neu request omit phone, backend giu phone cu.
 
 ### User preferences / PBF method
 
@@ -576,13 +616,13 @@ Uu tien 2 - bat buoc cho Goal progress:
 - Postman can verify health-data down fallback van 200 va `startWeightKg = null`.
 
 Uu tien 3 - can cho Profile Header dung design:
-- Expose `email` trong `GET /api/user/currentUser`, hoac FE dung them `/api/user/account-details`.
-- Expose `createdAt`/joined date. Hien `User.createdAt` co field nhung khong co `@CreationTimestamp` va `createDefaultUser()` khong set.
-- Neu muon hien "Tham gia tu MM/YYYY" dung data that, BE can set va expose `createdAt`.
+- DONE trong working tree, pending review/commit.
+- Postman can verify `GET /api/user/currentUser` has `data.email` and `data.createdAt`.
+- Existing old users may need DB backfill if `created_at` is null.
 
 Uu tien 4 - polish personal info:
-- Cho phep clear optional phone. Hien tai request `phone: null` khong xoa duoc phone cu.
-- Can thong nhat FE gui `phone` hay `phoneNumber`. Backend accept ca hai, response update tra `phone`, account-details tra `phoneNumber`.
+- DONE trong working tree, pending review/commit.
+- Backend accepts both `phone` and `phoneNumber`; explicit null clears phone.
 
 ## Khuyen nghi FE trong luc BE chua hoan tat
 
@@ -622,9 +662,9 @@ Uu tien 4 - polish personal info:
 - [x] Cross-service RestTemplate client da co trong working tree.
 - [ ] Change password endpoint chua co.
 - [ ] Error codes `AUTH-011`, `AUTH-012` chua co.
-- [ ] `createdAt`/joined date chua expose cho FE.
-- [ ] Clear phone ve null chua duoc backend support.
+- [x] `createdAt`/joined date da expose trong `currentUser` trong working tree.
+- [x] Clear phone ve null da duoc backend support trong working tree.
 
 ## Compact summary
 
-Profile BE status ngay 2026-05-27: Phase A da commit `9c9bea3`; health-data endpoints lien quan da wrap `DataResponse<T>` va compile pass. Phase B da xong trong working tree, chua commit; user goals co `startWeightKg`, snapshot client doc `body.data.weight.value`, va compile user-service pass. Backend da co currentUser, account-details, update profile, preferences, user-goals current/history, dashboard metrics, constitution. Chua co change-password. Gateway route `/api/auth/**` qua JwtFilter va chi bypass login/register/refresh, vi vay future `PUT /api/auth/change-password` se require JWT dung nhu mong doi. FE co the build Personal Info, Health Settings, Goal history UI ngay; Security submit can BE Phase D, Header email/createdAt can BE Phase C.
+Profile BE status ngay 2026-05-27: Phase A da commit `9c9bea3`; Phase B da commit `3446d37`; Phase C da xong trong working tree, chua commit. Health-data endpoints lien quan da wrap `DataResponse<T>`. User goals co `startWeightKg`, snapshot client doc `body.data.weight.value`. Current user profile co `email`, `createdAt`; update profile clear phone duoc khi request explicit null. Chua co change-password. Gateway route `/api/auth/**` qua JwtFilter va chi bypass login/register/refresh, vi vay future `PUT /api/auth/change-password` se require JWT dung nhu mong doi. FE co the build Personal Info, Health Settings, Goal history UI ngay; Security submit can BE Phase D.

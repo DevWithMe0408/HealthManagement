@@ -86,8 +86,7 @@ public class UserServiceImpl implements UserService {
                 !newUserDataRequest.getName().equals(existingUser.getName())) {
             existingUser.setName(newUserDataRequest.getName());
         }
-        if (newUserDataRequest.getPhone() != null &&
-                !newUserDataRequest.getPhone().equals(existingUser.getPhone())) {
+        if (newUserDataRequest.isPhoneProvided()) {
             existingUser.setPhone(newUserDataRequest.getPhone());
         }
 
