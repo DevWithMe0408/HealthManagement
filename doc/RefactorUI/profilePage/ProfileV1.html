@@ -1,0 +1,353 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8" />
+<title>HealthCare — User Profile</title>
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link
+  href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800&display=swap"
+  rel="stylesheet"
+/>
+<style>
+  html, body { margin: 0; padding: 0; height: 100%; background: #f3f5f4; font-family: "Be Vietnam Pro", system-ui, sans-serif; }
+  *, *::before, *::after { box-sizing: border-box; }
+  button, input, select, textarea { font-family: inherit; }
+
+  @keyframes profileSpin { to { transform: rotate(360deg); } }
+  @keyframes profileShimmer {
+    0% { background-position: 400% 0; }
+    100% { background-position: -400% 0; }
+  }
+  @keyframes profileFadeIn {
+    from { opacity: 0; transform: translateY(6px) scale(0.98); }
+    to { opacity: 1; transform: translateY(0) scale(1); }
+  }
+</style>
+</head>
+<body>
+<div id="root"></div>
+
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+
+<script type="text/babel" src="design-canvas.jsx"></script>
+<script type="text/babel" src="dashboard-shared.jsx"></script>
+<script type="text/babel" src="profile-shared.jsx"></script>
+<script type="text/babel" src="profile-sections.jsx"></script>
+<script type="text/babel" src="profile-modals.jsx"></script>
+<script type="text/babel" src="profile-page.jsx"></script>
+
+<script type="text/babel">
+function App() {
+  return (
+    <DesignCanvas
+      title="HealthCare — Hồ sơ của tôi (User Profile)"
+      subtitle="6 section · view / edit / modals / toast · Desktop + Mobile · 4 trạng thái thể trạng"
+    >
+      {/* =====================================================================
+          FULL PAGE — desktop & mobile
+          ===================================================================== */}
+      <DCSection id="full" title="Trang đầy đủ · Desktop & Mobile">
+        <DCArtboard
+          id="desktop-view"
+          label="Desktop — View mode (mặc định, readonly)"
+          width={1440}
+          height={1880}
+        >
+          <ProfileDesktopView />
+        </DCArtboard>
+
+        <DCArtboard
+          id="desktop-edit"
+          label="Desktop — Edit mode (Section 2 đang chỉnh sửa)"
+          width={1440}
+          height={1880}
+        >
+          <ProfileDesktopEdit />
+        </DCArtboard>
+
+        <DCArtboard
+          id="mobile"
+          label="Mobile — Stack đầy đủ (390 × 2640)"
+          width={390}
+          height={2640}
+        >
+          <ProfileMobile />
+        </DCArtboard>
+      </DCSection>
+
+      {/* =====================================================================
+          SECTION 1 — Header card · 4 constitution states
+          ===================================================================== */}
+      <DCSection id="s1" title="Section 1 — Header · 4 trạng thái thể trạng">
+        <DCArtboard id="s1-candoi" label="CÂN ĐỐI (default)" width={880} height={180}>
+          <Frame>
+            <S1ProfileHeader constitution="CAN_DOI" />
+          </Frame>
+        </DCArtboard>
+        <DCArtboard id="s1-gay" label="GẦY" width={880} height={180}>
+          <Frame>
+            <S1ProfileHeader
+              name="Trần Thị Mai"
+              email="mai.tran@healthcare.vn"
+              joined="Tham gia từ 01/2026"
+              constitution="GAY"
+            />
+          </Frame>
+        </DCArtboard>
+        <DCArtboard id="s1-thua" label="THỪA CÂN" width={880} height={180}>
+          <Frame>
+            <S1ProfileHeader
+              name="Lê Đức Anh"
+              email="duc.anh@healthcare.vn"
+              joined="Tham gia từ 08/2025"
+              constitution="THUA_CAN"
+            />
+          </Frame>
+        </DCArtboard>
+        <DCArtboard id="s1-beo" label="BÉO PHÌ" width={880} height={180}>
+          <Frame>
+            <S1ProfileHeader
+              name="Phạm Quốc Hùng"
+              email="hung.pham@healthcare.vn"
+              joined="Tham gia từ 11/2024"
+              constitution="BEO_PHI"
+            />
+          </Frame>
+        </DCArtboard>
+      </DCSection>
+
+      {/* =====================================================================
+          SECTION 2 — Personal info · view vs edit vs saving
+          ===================================================================== */}
+      <DCSection id="s2" title="Section 2 — Thông tin cá nhân · view / edit / saving">
+        <DCArtboard id="s2-view" label="View mode (readonly)" width={880} height={280}>
+          <Frame>
+            <S2PersonalInfo />
+          </Frame>
+        </DCArtboard>
+        <DCArtboard id="s2-edit" label="Edit mode (input fields)" width={880} height={400}>
+          <Frame>
+            <S2PersonalInfo editing />
+          </Frame>
+        </DCArtboard>
+        <DCArtboard id="s2-saving" label="Saving (spinner)" width={880} height={400}>
+          <Frame>
+            <S2PersonalInfo editing saving />
+          </Frame>
+        </DCArtboard>
+      </DCSection>
+
+      {/* =====================================================================
+          SECTION 3 — Goal · current / history collapsed / history expanded / empty
+          ===================================================================== */}
+      <DCSection id="s3" title="Section 3 — Mục tiêu · history states">
+        <DCArtboard id="s3-default" label="History collapsed (default)" width={880} height={400}>
+          <Frame>
+            <S3Goal />
+          </Frame>
+        </DCArtboard>
+        <DCArtboard id="s3-open" label="History expanded — 3 mục tiêu cũ" width={880} height={580}>
+          <Frame>
+            <S3Goal historyOpen />
+          </Frame>
+        </DCArtboard>
+        <DCArtboard id="s3-empty" label="History empty — chưa từng đổi mục tiêu" width={880} height={500}>
+          <Frame>
+            <S3Goal historyOpen history={[]} />
+          </Frame>
+        </DCArtboard>
+      </DCSection>
+
+      {/* =====================================================================
+          SECTION 4 — PBF method · FORMULA vs MODEL_1
+          ===================================================================== */}
+      <DCSection id="s4" title="Section 4.1 — Phương pháp tính PBF · 2 trạng thái">
+        <DCArtboard id="s4-formula" label="FORMULA selected (Navy)" width={880} height={420}>
+          <Frame>
+            <S4HealthSettings pbfMethod="FORMULA" />
+          </Frame>
+        </DCArtboard>
+        <DCArtboard id="s4-model" label="MODEL_1 selected (AI)" width={880} height={420}>
+          <Frame>
+            <S4HealthSettings pbfMethod="MODEL_1" />
+          </Frame>
+        </DCArtboard>
+      </DCSection>
+
+      {/* =====================================================================
+          SECTION 5 — Security · default vs validation error
+          ===================================================================== */}
+      <DCSection id="s5" title="Section 5 — Bảo mật · default / validation error">
+        <DCArtboard id="s5-default" label="Default" width={880} height={400}>
+          <Frame>
+            <S5Security />
+          </Frame>
+        </DCArtboard>
+        <DCArtboard id="s5-error" label="Validation error — mật khẩu yếu" width={880} height={420}>
+          <Frame>
+            <S5Security showError />
+          </Frame>
+        </DCArtboard>
+      </DCSection>
+
+      {/* =====================================================================
+          MODALS + TOAST (overlaid on real page context)
+          ===================================================================== */}
+      <DCSection id="overlays" title="Modal + Toast (overlay trên trang thật)">
+        <DCArtboard
+          id="modal-goal"
+          label="Modal: Đổi mục tiêu (đang chọn TĂNG CÂN)"
+          width={1440}
+          height={1000}
+        >
+          <ProfileWithGoalModal />
+        </DCArtboard>
+        <DCArtboard
+          id="modal-delete"
+          label="Modal: Xác nhận xóa tài khoản"
+          width={1440}
+          height={1000}
+        >
+          <ProfileWithDeleteModal />
+        </DCArtboard>
+        <DCArtboard
+          id="toast"
+          label="Toast: Đã cập nhật thông tin (top-right)"
+          width={1440}
+          height={900}
+        >
+          <ProfileWithToast />
+        </DCArtboard>
+      </DCSection>
+
+      {/* =====================================================================
+          MISC — loading, isolated modals, danger zone, toast variants
+          ===================================================================== */}
+      <DCSection id="misc" title="Loading · Danger zone · Modals isolated">
+        <DCArtboard
+          id="loading"
+          label="Loading skeleton (full page)"
+          width={1440}
+          height={1100}
+        >
+          <ProfileLoadingDesktop />
+        </DCArtboard>
+        <DCArtboard
+          id="danger"
+          label="Section 6 — Vùng nguy hiểm"
+          width={880}
+          height={180}
+        >
+          <Frame>
+            <S6DangerZone />
+          </Frame>
+        </DCArtboard>
+        <DCArtboard
+          id="modal-goal-iso"
+          label="Goal modal — isolated"
+          width={580}
+          height={620}
+        >
+          <div style={{ position: 'relative', width: '100%', height: '100%', background: '#1f2937', fontFamily: '"Be Vietnam Pro", system-ui, sans-serif' }}>
+            <GoalChangeModal selected="TANG" />
+          </div>
+        </DCArtboard>
+        <DCArtboard
+          id="modal-delete-iso"
+          label="Delete modal — isolated"
+          width={520}
+          height={680}
+        >
+          <div style={{ position: 'relative', width: '100%', height: '100%', background: '#1f2937', fontFamily: '"Be Vietnam Pro", system-ui, sans-serif' }}>
+            <DeleteAccountModal />
+          </div>
+        </DCArtboard>
+        <DCArtboard
+          id="toast-success"
+          label="Toast — success isolated"
+          width={420}
+          height={100}
+        >
+          <div
+            style={{
+              padding: 16,
+              background: DB.bg,
+              width: '100%',
+              height: '100%',
+              fontFamily: '"Be Vietnam Pro", system-ui, sans-serif',
+            }}
+          >
+            <Toast message="Đã cập nhật thông tin" />
+          </div>
+        </DCArtboard>
+        <DCArtboard
+          id="toast-pbf"
+          label="Toast — đổi phương pháp PBF"
+          width={420}
+          height={100}
+        >
+          <div
+            style={{
+              padding: 16,
+              background: DB.bg,
+              width: '100%',
+              height: '100%',
+              fontFamily: '"Be Vietnam Pro", system-ui, sans-serif',
+            }}
+          >
+            <Toast message="Đã đổi phương pháp tính PBF" />
+          </div>
+        </DCArtboard>
+      </DCSection>
+    </DesignCanvas>
+  );
+}
+
+// Frame wrapper for isolated section artboards
+function Frame({ children }) {
+  return (
+    <div
+      style={{
+        background: DB.bg,
+        padding: 24,
+        width: '100%',
+        height: '100%',
+        fontFamily: '"Be Vietnam Pro", system-ui, sans-serif',
+      }}
+    >
+      {children}
+    </div>
+  );
+}
+
+// Frame with dim overlay (for isolated modals to show the backdrop)
+function FrameDim({ children }) {
+  return (
+    <div
+      style={{
+        background:
+          'linear-gradient(135deg, rgba(15,23,42,0.25) 0%, rgba(15,23,42,0.45) 100%)',
+        width: '100%',
+        height: '100%',
+        display: 'grid',
+        placeItems: 'center',
+        padding: 24,
+        fontFamily: '"Be Vietnam Pro", system-ui, sans-serif',
+        position: 'relative',
+      }}
+    >
+      <div style={{ position: 'relative', width: '100%', maxWidth: 520 }}>
+        {children}
+      </div>
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+</script>
+</body>
+</html>
