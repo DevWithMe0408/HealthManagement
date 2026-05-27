@@ -21,6 +21,8 @@ public enum ErrorCode {
     FORBIDDEN               ("AUTH-008", HttpStatus.FORBIDDEN,    "Khong du quyen thuc hien thao tac"),
     JWT_INVALID             ("AUTH-009", HttpStatus.UNAUTHORIZED, "JWT khong hop le"),
     JWT_EXPIRED             ("AUTH-010", HttpStatus.UNAUTHORIZED, "JWT da het han"),
+    CHANGE_PASSWORD_WRONG_CURRENT ("AUTH-011", HttpStatus.BAD_REQUEST, "Mat khau hien tai khong dung"),
+    CHANGE_PASSWORD_SAME          ("AUTH-012", HttpStatus.BAD_REQUEST, "Mat khau moi khong duoc trung mat khau cu"),
     EVENT_PUBLISH_FAILED    ("AUTH-500", HttpStatus.INTERNAL_SERVER_ERROR, "Khong the publish event"),
 
     // ===== CONFIG module =====

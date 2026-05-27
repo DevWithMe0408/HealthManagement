@@ -1,5 +1,6 @@
 package org.example.userservice.service;
 
+import org.example.userservice.dto.request.ChangePasswordRequest;
 import org.example.userservice.dto.request.LoginRequest;
 import org.example.userservice.dto.request.RegisterRequest;
 import org.example.userservice.dto.response.TokenRefreshResponse;
@@ -21,9 +22,11 @@ public interface AuthService {
       */
      TokenRefreshResponse loginUser(LoginRequest request);
      /**
-      * Refresh access token using refresh token
-      * @param refreshTokenString
-      */
+     * Refresh access token using refresh token
+     * @param refreshTokenString
+     */
      TokenRefreshResponse refreshAccessToken(String refreshTokenString);
+
+     void changePassword(String userId, ChangePasswordRequest request);
 
 }

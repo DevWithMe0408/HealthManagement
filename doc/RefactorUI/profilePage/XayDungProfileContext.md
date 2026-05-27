@@ -2,7 +2,7 @@
 
 Ngay tao: 2026-05-27
 
-Cap nhat gan nhat: 2026-05-27 - Phase A/B committed, Phase C BE completed in working tree, pending user review/commit.
+Cap nhat gan nhat: 2026-05-27 - Phase A/B/C committed, Phase D BE completed in working tree, pending user review/commit.
 
 Tai lieu goc: `doc/RefactorUI/profilePage/HuongDanXayDungProfilePage.md`
 
@@ -27,14 +27,23 @@ Phase B da commit:
 - `PUT /api/user-goals/current` se snapshot current weight tu `GET /api/health-data/dashboard-metrics`.
 - Compile module `user-service` pass voi `.\mvnw -pl user-service -am test -DskipTests`.
 
-Phase C da duoc thuc hien trong working tree, chua commit:
+Phase C da commit:
+- Commit: `30942c7 feat(user): expose profile metadata and safe phone clearing`
 - `GET /api/user/currentUser` tra them `email`, `createdAt`.
 - `UserResponseDTO` tra them `email`, `createdAt`.
 - `User.createdAt` co `@CreationTimestamp`.
 - `PUT /api/user/profile` clear phone duoc khi request co `phone: null` hoac `phoneNumber: null`.
 - Neu client omit phone, backend khong clear phone ngoai y muon.
 - Compile module `user-service` pass voi `.\mvnw -pl user-service -am test -DskipTests`.
-- Can user review/OK truoc khi commit va sang Phase D.
+
+Phase D da duoc thuc hien trong working tree, chua commit:
+- Them `PUT /api/auth/change-password`.
+- Them `ChangePasswordRequest`.
+- Them `AuthService.changePassword(...)` va implementation trong `AuthServiceImpl`.
+- Them `AUTH-011`, `AUTH-012` trong `ErrorCode`.
+- BE enforce new password min 8, max 100, co it nhat 1 chu HOA va 1 chu so.
+- Compile module `user-service` pass voi `.\mvnw -pl user-service -am test -DskipTests`.
+- Can user review/OK truoc khi commit va sang final verify.
 
 Da co cac API nen tang:
 - Lay current user profile: `GET /api/user/currentUser`
@@ -44,10 +53,9 @@ Da co cac API nen tang:
 - Lay dashboard metrics/current weight: `GET /api/health-data/dashboard-metrics` (sau Phase A: `DataResponse<DashboardMetricsResponse>`)
 - Lay constitution: `GET /api/health-data/constitution`
 
-Con thieu cac phan bat buoc cua Profile MVP:
-- Chua co endpoint `PUT /api/auth/change-password`.
-- Chua co `ChangePasswordRequest`.
-- Chua co `AUTH-011`, `AUTH-012` trong `ErrorCode`.
+Con thieu truoc khi xem la done end-to-end:
+- Chua chay Postman/runtime verify do can services va token hop le.
+- Chua chay DB schema/backfill verify trong MySQL runtime.
 
 ## Phase execution log
 
@@ -107,7 +115,9 @@ Verification:
 
 ### Phase C - profile email/createdAt and safe phone clear
 
-Trang thai: DA THUC HIEN TRONG WORKING TREE, CHUA COMMIT, DANG CHO USER REVIEW.
+Trang thai: DA COMMIT.
+
+Commit: `30942c7 feat(user): expose profile metadata and safe phone clearing`
 
 Files updated:
 - `user-service/src/main/java/org/example/userservice/entity/User.java`
@@ -129,6 +139,33 @@ Thay doi:
 
 Intentional deviation from BE guide:
 - Did not add `@NotBlank/@NotNull` to `UserRequestDTO` in Phase C because no runtime/E2E onboarding verification is available in this session. This keeps existing partial-update behavior safer while still supporting Profile clear-phone.
+
+Verification:
+- Da chay `.\mvnw -pl user-service -am test -DskipTests`.
+- Da chay them `.\mvnw -pl user-service,health-data-service -am test -DskipTests`.
+- Ket qua: BUILD SUCCESS.
+- Chua chay Postman vi can service/runtime va token hop le.
+
+### Phase D - change password endpoint
+
+Trang thai: DA THUC HIEN TRONG WORKING TREE, CHUA COMMIT, DANG CHO USER REVIEW.
+
+Files updated/added:
+- `common/src/main/java/org/example/web/exception/ErrorCode.java`
+- `user-service/src/main/java/org/example/userservice/dto/request/ChangePasswordRequest.java`
+- `user-service/src/main/java/org/example/userservice/service/AuthService.java`
+- `user-service/src/main/java/org/example/userservice/service/AuthServiceImpl.java`
+- `user-service/src/main/java/org/example/userservice/controller/AuthController.java`
+
+Thay doi:
+- Add `PUT /api/auth/change-password`.
+- Request body: `currentPassword`, `newPassword`.
+- Gateway se require JWT vi `/api/auth/change-password` khong nam trong public endpoints.
+- Wrong current password returns `AUTH-011`.
+- New password same as current password returns `AUTH-012`.
+- New password validation: not blank, 8-100 chars, at least 1 uppercase letter and 1 digit.
+- JWT remains valid after password change in MVP.
+- No raw password logging.
 
 Verification:
 - Da chay `.\mvnw -pl user-service -am test -DskipTests`.
@@ -222,7 +259,7 @@ FE impact:
 
 ### A3 - Change Password endpoint
 
-Trang thai: CHUA LAM.
+Trang thai: DA LAM TRONG WORKING TREE, CHUA COMMIT.
 
 File da kiem tra:
 - `user-service/src/main/java/org/example/userservice/service/AuthService.java`
@@ -232,13 +269,13 @@ File da kiem tra:
 - `user-service/src/main/java/org/example/userservice/config/SecurityConfig.java`
 - `api-gateway/src/main/java/org/example/apigateway/security/JwtFilter.java`
 
-Hien tai `AuthController` chi co:
+Sau Phase D trong working tree, `AuthController` co:
 - `POST /api/auth/register`
 - `POST /api/auth/login`
 - `POST /api/auth/refresh-token`
-
-Chua co:
 - `PUT /api/auth/change-password`
+
+Da co trong working tree:
 - `ChangePasswordRequest`
 - `AuthService.changePassword(...)`
 - `AuthServiceImpl.changePassword(...)`
@@ -259,9 +296,8 @@ Gateway:
 - Khong can sua gateway cho change-password neu giu path nay.
 
 FE impact:
-- Chua the implement Section Security voi API that.
-- Co the build UI/form validation truoc, nhung submit that se fail 404/405 cho den khi BE them endpoint.
-- Khi BE xong, FE service nen goi:
+- Sau Phase D duoc commit/deploy, Section Security co the integrate API that.
+- FE service nen goi:
 
 ```ts
 apiClient.put<DataResponse<void>>('/api/auth/change-password', {
@@ -270,7 +306,7 @@ apiClient.put<DataResponse<void>>('/api/auth/change-password', {
 });
 ```
 
-Expected BE errors sau khi implement:
+Expected BE errors:
 - Sai current password: HTTP 400, `code = "AUTH-011"`.
 - New password trung old password: HTTP 400, `code = "AUTH-012"`.
 - Validation error: HTTP 400, `code = "COMMON-001"`, message gom field error.
@@ -533,7 +569,7 @@ interface UserGoalResponseCurrentBackend {
 }
 ```
 
-Truoc Phase B response chua co `startWeightKg`; sau Phase B trong working tree field nay da co.
+Truoc Phase B response chua co `startWeightKg`; sau Phase B commit `3446d37` field nay da co.
 
 `PUT /api/user-goals/current` payload:
 
@@ -603,12 +639,8 @@ Ngoai le dang chu y:
 ## Backend blockers truoc khi FE integration full
 
 Uu tien 1 - bat buoc cho Security section:
-- Them `ChangePasswordRequest`.
-- Them `AuthService.changePassword`.
-- Implement trong `AuthServiceImpl` bang `passwordEncoder.matches()` va `encode()`.
-- Them `PUT /api/auth/change-password`.
-- Them `AUTH-011`, `AUTH-012`.
-- Test wrong current password, same password, min length.
+- DONE trong working tree, pending review/commit.
+- Postman can verify wrong current password, same password, validation error, and login with new password.
 
 Uu tien 2 - bat buoc cho Goal progress:
 - DONE trong working tree, pending review/commit.
@@ -642,8 +674,8 @@ Uu tien 4 - polish personal info:
 5. Section Health Settings:
    - Co the integrate ngay voi `GET/PUT /api/user-preferences/pbf_method`.
 6. Section Security:
-   - Build form validation truoc.
-   - Disable submit hoac hien toast "Tinh nang dang phat trien" cho den khi BE co `PUT /api/auth/change-password`.
+   - Sau Phase D commit/deploy, FE co the submit `PUT /api/auth/change-password`.
+   - Handle `AUTH-011`, `AUTH-012`, va validation `COMMON-001`.
 7. Section Danger Zone:
    - Khong goi DELETE account endpoint trong MVP.
 
@@ -660,11 +692,11 @@ Uu tien 4 - polish personal info:
 - [x] `startWeightKg` migration/field/response da co trong working tree.
 - [x] Snapshot current weight khi doi goal da co trong working tree.
 - [x] Cross-service RestTemplate client da co trong working tree.
-- [ ] Change password endpoint chua co.
-- [ ] Error codes `AUTH-011`, `AUTH-012` chua co.
+- [x] Change password endpoint da co trong working tree.
+- [x] Error codes `AUTH-011`, `AUTH-012` da co trong working tree.
 - [x] `createdAt`/joined date da expose trong `currentUser` trong working tree.
 - [x] Clear phone ve null da duoc backend support trong working tree.
 
 ## Compact summary
 
-Profile BE status ngay 2026-05-27: Phase A da commit `9c9bea3`; Phase B da commit `3446d37`; Phase C da xong trong working tree, chua commit. Health-data endpoints lien quan da wrap `DataResponse<T>`. User goals co `startWeightKg`, snapshot client doc `body.data.weight.value`. Current user profile co `email`, `createdAt`; update profile clear phone duoc khi request explicit null. Chua co change-password. Gateway route `/api/auth/**` qua JwtFilter va chi bypass login/register/refresh, vi vay future `PUT /api/auth/change-password` se require JWT dung nhu mong doi. FE co the build Personal Info, Health Settings, Goal history UI ngay; Security submit can BE Phase D.
+Profile BE status ngay 2026-05-27: Phase A da commit `9c9bea3`; Phase B da commit `3446d37`; Phase C da commit `30942c7`; Phase D da xong trong working tree, chua commit. Health-data endpoints lien quan da wrap `DataResponse<T>`. User goals co `startWeightKg`, snapshot client doc `body.data.weight.value`. Current user profile co `email`, `createdAt`; update profile clear phone duoc khi request explicit null. Change-password endpoint da co trong working tree voi `AUTH-011`/`AUTH-012` va password policy validation. Gateway route `/api/auth/**` qua JwtFilter va chi bypass login/register/refresh, vi vay `PUT /api/auth/change-password` require JWT dung nhu mong doi. Chua chay Postman/runtime va DB verify.

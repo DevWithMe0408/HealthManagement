@@ -2,6 +2,7 @@ package org.example.userservice.service;
 
 import lombok.RequiredArgsConstructor;
 import org.example.events.UserCreatedEvent;
+import org.example.userservice.dto.request.ChangePasswordRequest;
 import org.example.userservice.dto.request.LoginRequest;
 import org.example.userservice.dto.request.RegisterRequest;
 import org.example.userservice.dto.response.TokenRefreshResponse;
@@ -159,5 +160,29 @@ public class AuthServiceImpl implements AuthService {
         );
         String newJwt = jwtUtil.generateToken(authentication);
         return new TokenRefreshResponse(newJwt, refreshToken.getToken());
+    }
+
+    @Override
+    @Transactional
+    public void changePassword(String userId, ChangePasswordRequest request) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
+
+        Auth auth = user.getAuth();
+        if (auth == null) {
+            throw new BusinessException(ErrorCode.USER_NOT_FOUND);
+        }
+
+        if (!passwordEncoder.matches(request.getCurrentPassword(), auth.getPassword())) {
+            throw new BusinessException(ErrorCode.CHANGE_PASSWORD_WRONG_CURRENT);
+        }
+
+        if (passwordEncoder.matches(request.getNewPassword(), auth.getPassword())) {
+            throw new BusinessException(ErrorCode.CHANGE_PASSWORD_SAME);
+        }
+
+        auth.setPassword(passwordEncoder.encode(request.getNewPassword()));
+        authRepository.save(auth);
+        log.info("Password changed successfully for userId={}", userId);
     }
 }
