@@ -22,5 +22,7 @@ public class DishOptionResponse {
     private BigDecimal expectedScore;
     private BigDecimal expectedServing;
     private BigDecimal expectedActualGrams;
+    private String unit;
+    private Integer baseServingG;
     private boolean favorite;
 }

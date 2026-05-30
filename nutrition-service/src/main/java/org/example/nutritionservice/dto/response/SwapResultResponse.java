@@ -6,6 +6,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
+import java.util.List;
 
 @Data
 @NoArgsConstructor
@@ -18,6 +19,7 @@ public class SwapResultResponse {
     private BigDecimal originalFinalScore;
     private boolean scoreDropTriggered;
     private SwapSuggestion suggestion;
+    private List<WarningResponse> warnings;
 
     @Data
     @NoArgsConstructor

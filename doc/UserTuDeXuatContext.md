@@ -133,15 +133,17 @@ Tuy nhien khong nen code y nguyen tai lieu; can dieu chinh mot so diem de khop v
 
 ## Trang thai hien tai
 
-- Step hien tai: Step 1 - Cap nhat DB seed/config.
-- Trang thai Step 1: DONE, dang cho user review.
+- Step hien tai: Step 2 - Cap nhat DTO contract.
+- Trang thai Step 2: DONE, dang cho user review.
 - Da xac nhan file context nam tai `doc/UserTuDeXuatContext.md`.
 - Da cap nhat muc dich de file nay phuc vu ca BE va FE.
 - Da ghi rule lam viec: sau moi step dung lai de user review, chi lam tiep khi user OK.
 - Da commit Step 0: `90d2283 docs(nutrition): add user proposed meal context`.
 - Da them seed `warn.carb_ratio_threshold = 0.70` vao `nutrition-service/src/main/resources/db/data.sql`.
-- Chua sua Java code tinh nang.
-- Chua chay test.
+- Da commit Step 1: `afec322 chore(nutrition): seed carb ratio warning config`.
+- Da cap nhat DTO contract cho request/response cua luong user tu de xuat mon.
+- Da chay `.\mvnw.cmd -pl nutrition-service -DskipTests compile`: BUILD SUCCESS.
+- Chua sua service/engine/repository/controller.
 
 ## Nhat ky step
 
@@ -199,3 +201,58 @@ Review can user xac nhan:
 
 - Key config va default `0.70` dung mong muon.
 - Mo ta ASCII trong `data.sql` chap nhan duoc theo style seed hien tai.
+
+### Step 2 - Cap nhat DTO contract
+
+Status: DONE
+
+Noi dung da lam:
+
+- Cap nhat `PinnedDish`:
+  - Them `overrideGrams: BigDecimal`.
+  - Them validation `@Positive`.
+  - Field nullable de giu backward compatibility voi request cu.
+- Cap nhat `DishSuggestionResponse`:
+  - Them `unit: String`.
+  - Them `baseServingG: Integer`.
+- Cap nhat `DishOptionResponse`:
+  - Them `unit: String`.
+  - Them `baseServingG: Integer`.
+  - Giu `expectedScore: BigDecimal` nullable theo mac dinh Java object.
+- Cap nhat `SwapResultResponse`:
+  - Them `warnings: List<WarningResponse>`.
+- Tao DTO moi `WarningResponse`:
+  - `type: String`.
+  - `message: String`.
+
+Files changed:
+
+- `nutrition-service/src/main/java/org/example/nutritionservice/dto/request/PinnedDish.java`
+- `nutrition-service/src/main/java/org/example/nutritionservice/dto/response/DishSuggestionResponse.java`
+- `nutrition-service/src/main/java/org/example/nutritionservice/dto/response/DishOptionResponse.java`
+- `nutrition-service/src/main/java/org/example/nutritionservice/dto/response/SwapResultResponse.java`
+- `nutrition-service/src/main/java/org/example/nutritionservice/dto/response/WarningResponse.java`
+- `doc/UserTuDeXuatContext.md`
+
+Ghi chu cho BE:
+
+- Step nay moi them contract DTO, chua populate `unit`, `baseServingG`, `warnings`.
+- Cac field moi se duoc gan gia tri o cac step service/mapper sau.
+- `overrideGrams` moi duoc accept vao request, engine chua dung field nay o Step 2.
+
+Ghi chu cho FE:
+
+- `PinnedDish.overrideGrams` la optional. Khong gui field nay thi behavior cu duoc giu.
+- `DishSuggestionResponse.unit` va `baseServingG` co the tam thoi null cho den khi BE mapper duoc cap nhat o step sau.
+- `DishOptionResponse.expectedScore` co the null, dac biet voi search endpoint sau nay.
+- `SwapResultResponse.warnings` co the null/empty cho den khi service warning duoc cap nhat.
+
+Verification:
+
+- Da chay `.\mvnw.cmd -pl nutrition-service -DskipTests compile`.
+- Ket qua: BUILD SUCCESS.
+
+Review can user xac nhan:
+
+- DTO contract dung voi nhu cau FE/BE.
+- Chap nhan viec cac field moi tam thoi chua duoc populate cho den cac step tiep theo.

@@ -43,5 +43,7 @@ public class DishSuggestionResponse {
     @Positive
     private BigDecimal dishKcal;
 
+    private String unit;
+    private Integer baseServingG;
     private boolean favorite;
 }
