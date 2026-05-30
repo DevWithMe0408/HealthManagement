@@ -133,8 +133,8 @@ Tuy nhien khong nen code y nguyen tai lieu; can dieu chinh mot so diem de khop v
 
 ## Trang thai hien tai
 
-- Step hien tai: Step 4 - Cap nhat engine fixed serving.
-- Trang thai Step 4: DONE, dang cho user review.
+- Step hien tai: Step 5 - Noi overrideGrams va warnings vao swap service.
+- Trang thai Step 5: DONE, dang cho user review.
 - Da xac nhan file context nam tai `doc/UserTuDeXuatContext.md`.
 - Da cap nhat muc dich de file nay phuc vu ca BE va FE.
 - Da ghi rule lam viec: sau moi step dung lai de user review, chi lam tiep khi user OK.
@@ -147,7 +147,9 @@ Tuy nhien khong nen code y nguyen tai lieu; can dieu chinh mot so diem de khop v
 - Da cap nhat `DishRepository.searchByName(...)` cho endpoint search mon sau nay.
 - Da commit Step 3: `1b254e7 feat(nutrition): add dish search repository query`.
 - Da cap nhat `BruteForceEngine` de ho tro fixed serving theo index.
-- Chua sua service/controller.
+- Da commit Step 4: `63d0876 feat(nutrition): support fixed serving optimization`.
+- Da cap nhat `RecommendationApiService.swapDish` de doc `overrideGrams`, truyen fixed serving vao engine va tra carb-bomb warnings.
+- Chua sua controller/search service/mapper `unit` va `baseServingG`.
 
 ## Nhat ky step
 
@@ -349,3 +351,53 @@ Review can user xac nhan:
 
 - Engine fixed serving dung voi mo hinh C: giu mon, chi toi uu serving cac slot khac.
 - Chap nhan prune logic tinh exact kcal cho fixed serving de tranh cat nhanh sai.
+
+### Step 5 - Noi overrideGrams va warnings vao swap service
+
+Status: DONE
+
+Noi dung da lam:
+
+- Cap nhat `RecommendationApiService`.
+- Trong `swapDish`:
+  - Build `fixedServingByIndex` tu `request.pinnedDishes[*].overrideGrams`.
+  - Map theo `slotKey` cua `currentDishes` sang index trong `pinnedCandidates`.
+  - Goi overload moi cua `bruteForceEngine.findBestServingCombo(...)` voi `fixedServingByIndex`.
+  - Sau khi co `bestCombo`, tinh carb-bomb warning.
+  - Gan `warnings` vao `SwapResultResponse`.
+- Them helper `buildFixedServingByIndex(...)`.
+- Them helper `buildWarnings(...)`.
+- Cap nhat message cua `findBestSwapSuggestion(...)` sang tieng Viet co dau.
+
+Files changed:
+
+- `nutrition-service/src/main/java/org/example/nutritionservice/service/recommendation/RecommendationApiService.java`
+- `doc/UserTuDeXuatContext.md`
+
+Ghi chu cho BE:
+
+- `overrideGrams` chi co tac dung khi nam trong `pinnedDishes`.
+- Neu `overrideGrams` khong null, slot tuong ung duoc fixed serving trong engine.
+- Engine van giu kcal deviation final check, nen override qua cao/thap co the tra loi "Khong tim duoc serving thoa man sau khi doi mon".
+- Warning carb-bomb doc threshold tu `warn.carb_ratio_threshold`.
+- `warnings` tra ve list rong neu khong co warning.
+
+Ghi chu cho FE:
+
+- De ep serving, FE gui:
+  - `pinnedDishes[].slotKey`
+  - `pinnedDishes[].dishId`
+  - `pinnedDishes[].overrideGrams`
+- Neu user chi pin mon nhung khong ep gram, bo qua `overrideGrams` hoac gui null.
+- `SwapResultResponse.warnings` co the la `[]`; FE nen render banner khi co item type `CARB_BOMB`.
+- Message warning da la text tieng Viet san de render.
+
+Verification:
+
+- Da chay `.\mvnw.cmd -pl nutrition-service -DskipTests compile`.
+- Ket qua: BUILD SUCCESS.
+
+Review can user xac nhan:
+
+- Behavior override serving dung mong muon.
+- Warning carb-bomb nen duoc tinh trong Step 5, con populate `unit/baseServingG` de Step 6.

@@ -24,6 +24,7 @@ import org.example.nutritionservice.dto.response.DishSuggestionResponse;
 import org.example.nutritionservice.dto.response.MealCombinationResponse;
 import org.example.nutritionservice.dto.response.MealSuggestionResponse;
 import org.example.nutritionservice.dto.response.SwapResultResponse;
+import org.example.nutritionservice.dto.response.WarningResponse;
 import org.example.nutritionservice.entity.catalog.Dish;
 import org.example.nutritionservice.entity.catalog.SlotCode;
 import org.example.nutritionservice.entity.favorite.FavoriteDish;
@@ -142,6 +143,7 @@ public class RecommendationApiService {
             }
             pinnedCandidates.add(dishFilterService.toCandidate(pinnedDish));
         }
+        Map<Integer, BigDecimal> fixedServingByIndex = buildFixedServingByIndex(currentDishes, request);
 
         PerMealConfig perMealConfig = buildPerMealConfig(currentDishes);
         MacroTarget macroTarget = macroCalculator.calculateMacroTarget(
@@ -172,6 +174,7 @@ public class RecommendationApiService {
         );
         MealCombination bestCombo = bruteForceEngine.findBestServingCombo(
                 pinnedCandidates,
+                fixedServingByIndex,
                 mealTarget,
                 configs,
                 penalty
@@ -179,6 +182,7 @@ public class RecommendationApiService {
         if (bestCombo == null) {
             throw invalid("Khong tim duoc serving thoa man sau khi doi mon");
         }
+        List<WarningResponse> warnings = buildWarnings(bestCombo, configs);
 
         Map<String, List<SlotAlternative>> slotAlternatives = bruteForceEngine.computeSlotAlternatives(
                 bestCombo,
@@ -221,6 +225,7 @@ public class RecommendationApiService {
                         explicitPinnedSlots,
                         updatedCombination.getFinalScore()
                 ) : null)
+                .warnings(warnings)
                 .build();
     }
 
@@ -363,6 +368,33 @@ public class RecommendationApiService {
         return pinnedMap;
     }
 
+    private Map<Integer, BigDecimal> buildFixedServingByIndex(
+            List<DishSuggestionResponse> currentDishes,
+            SwapDishRequest request) {
+        Map<Integer, BigDecimal> fixedServingByIndex = new HashMap<>();
+        if (request.getPinnedDishes() == null) {
+            return fixedServingByIndex;
+        }
+
+        for (PinnedDish pinnedDish : request.getPinnedDishes()) {
+            if (pinnedDish.getOverrideGrams() == null) {
+                continue;
+            }
+            boolean found = false;
+            for (int index = 0; index < currentDishes.size(); index++) {
+                if (slotKeyOf(currentDishes, index).equals(pinnedDish.getSlotKey())) {
+                    fixedServingByIndex.put(index, pinnedDish.getOverrideGrams());
+                    found = true;
+                    break;
+                }
+            }
+            if (!found) {
+                throw invalid("Slot pin khong ton tai: " + pinnedDish.getSlotKey());
+            }
+        }
+        return fixedServingByIndex;
+    }
+
     private Set<String> explicitPinnedSlots(SwapDishRequest request) {
         Set<String> pinnedSlots = new java.util.LinkedHashSet<>();
         if (request.getPinnedDishes() != null) {
@@ -408,6 +440,29 @@ public class RecommendationApiService {
         return candidates;
     }
 
+    private List<WarningResponse> buildWarnings(MealCombination bestCombo, LoadedConfigs configs) {
+        BigDecimal totalKcal = bestCombo.getActual().getKcal();
+        if (totalKcal.signum() <= 0) {
+            return List.of();
+        }
+
+        BigDecimal carbRatioThreshold = configs.getDecimal("warn.carb_ratio_threshold");
+        BigDecimal carbKcal = bestCombo.getActual().getCarbG().multiply(KCAL_PER_G_CARB);
+        BigDecimal carbRatio = carbKcal.divide(totalKcal, CALC_SCALE, RoundingMode.HALF_UP);
+        if (carbRatio.compareTo(carbRatioThreshold) <= 0) {
+            return List.of();
+        }
+
+        int carbPercent = carbRatio.multiply(ONE_HUNDRED)
+                .setScale(0, RoundingMode.HALF_UP)
+                .intValue();
+        return List.of(WarningResponse.builder()
+                .type("CARB_BOMB")
+                .message("Bữa này khá nặng tinh bột (" + carbPercent
+                        + "% kcal từ carb). Cân nhắc giảm khẩu phần tinh bột hoặc đổi sang lựa chọn cân bằng hơn.")
+                .build());
+    }
+
     private SwapResultResponse.SwapSuggestion findBestSwapSuggestion(
             Map<String, List<SlotAlternative>> slotAlternatives,
             Set<String> explicitPinnedSlots,
@@ -429,8 +484,9 @@ public class RecommendationApiService {
             return null;
         }
         return SwapResultResponse.SwapSuggestion.builder()
-                .message("Doi mon o [" + bestSlotKey + "] sang [" + bestAlternative.getCandidate().getDishName()
-                        + "] co the tang score len " + bestAlternative.getExpectedScore())
+                .message("Đổi món ở slot " + bestSlotKey + " sang "
+                        + bestAlternative.getCandidate().getDishName() + " để tăng điểm lên "
+                        + bestAlternative.getExpectedScore().setScale(1, RoundingMode.HALF_UP) + ".")
                 .targetSlotKey(bestSlotKey)
                 .suggestedDishId(bestAlternative.getDishId())
                 .suggestedScore(bestAlternative.getExpectedScore())
