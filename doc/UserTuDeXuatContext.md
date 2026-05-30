@@ -133,8 +133,8 @@ Tuy nhien khong nen code y nguyen tai lieu; can dieu chinh mot so diem de khop v
 
 ## Trang thai hien tai
 
-- Step hien tai: Step 7 - Them endpoint search mon.
-- Trang thai Step 7: DONE, dang cho user review.
+- Step hien tai: Step 8 - Test va kiem tra tong the.
+- Trang thai Step 8: DONE, dang cho user review.
 - Da xac nhan file context nam tai `doc/UserTuDeXuatContext.md`.
 - Da cap nhat muc dich de file nay phuc vu ca BE va FE.
 - Da ghi rule lam viec: sau moi step dung lai de user review, chi lam tiep khi user OK.
@@ -153,7 +153,8 @@ Tuy nhien khong nen code y nguyen tai lieu; can dieu chinh mot so diem de khop v
 - Da populate `unit` va `baseServingG` trong response mapper cua `RecommendationApiService`.
 - Da commit Step 6: `764a6fd feat(nutrition): include serving unit metadata`.
 - Da them `DishSearchService` va `DishController` cho endpoint search mon.
-- Chua chay full test suite.
+- Da commit Step 7: `93ef9bc feat(nutrition): add dish search endpoint`.
+- Da chay `.\mvnw.cmd -pl nutrition-service test`: BUILD SUCCESS, 6 tests pass.
 
 ## Nhat ky step
 
@@ -522,3 +523,60 @@ Review can user xac nhan:
 
 - Contract endpoint search dung nhu FE can.
 - Gioi han 20 ket qua va expectedServing theo config duoc chap nhan.
+
+### Step 8 - Test va kiem tra tong the
+
+Status: DONE
+
+Noi dung da lam:
+
+- Chay test module `nutrition-service`.
+- Lenh:
+  - `.\mvnw.cmd -pl nutrition-service test`
+- Ket qua:
+  - BUILD SUCCESS.
+  - Tests run: 6.
+  - Failures: 0.
+  - Errors: 0.
+  - Skipped: 0.
+
+Ghi chu khi test:
+
+- Spring context test co log warning do khong ket noi duoc Eureka tai `localhost:8761`.
+- Warning nay khong lam fail test; ket qua Maven van BUILD SUCCESS.
+- Chua smoke test API runtime bang Postman/cURL vi chua khoi dong day du discovery/gateway/nutrition-service trong Step 8.
+
+Files changed:
+
+- `doc/UserTuDeXuatContext.md`
+
+Tong ket BE da hoan thanh:
+
+- Seed config `warn.carb_ratio_threshold`.
+- DTO contract cho override serving, warning va serving metadata.
+- Repository search mon theo slot/name.
+- Engine fixed serving.
+- Swap service dung `overrideGrams`, tra warnings carb-bomb.
+- Response mapper populate `unit/baseServingG` cho full-day/swap/alternatives.
+- Endpoint search mon `GET /api/nutrition/dishes/search`.
+
+Ghi chu cho BE tiep theo:
+
+- Neu DB da ton tai tu truoc, can dam bao row `warn.carb_ratio_threshold` da duoc insert vao DB runtime.
+- Can smoke test manual khi infra day du dang chay:
+  - search endpoint.
+  - swap-dish voi `overrideGrams`.
+  - case warning `CARB_BOMB`.
+  - case override qua cao/thap.
+
+Ghi chu cho FE tiep theo:
+
+- Co the dung `doc/UserTuDeXuatContext.md` lam contract BE/FE.
+- Search endpoint tra `expectedScore = null`; FE khong render score khi null.
+- `SwapResultResponse.warnings` la list, render banner neu co `type = CARB_BOMB`.
+- Meal-log history van co the thieu `unit/baseServingG`; FE fallback grams.
+
+Review can user xac nhan:
+
+- Ket qua test chap nhan duoc.
+- Co can them smoke test runtime/manual hay them unit test rieng cho `DishSearchService`/override swap truoc khi ket thuc BE khong.
