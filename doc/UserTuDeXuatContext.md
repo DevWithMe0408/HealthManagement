@@ -133,8 +133,8 @@ Tuy nhien khong nen code y nguyen tai lieu; can dieu chinh mot so diem de khop v
 
 ## Trang thai hien tai
 
-- Step hien tai: Step 2 - Cap nhat DTO contract.
-- Trang thai Step 2: DONE, dang cho user review.
+- Step hien tai: Step 3 - Cap nhat repository search mon.
+- Trang thai Step 3: DONE, dang cho user review.
 - Da xac nhan file context nam tai `doc/UserTuDeXuatContext.md`.
 - Da cap nhat muc dich de file nay phuc vu ca BE va FE.
 - Da ghi rule lam viec: sau moi step dung lai de user review, chi lam tiep khi user OK.
@@ -143,7 +143,9 @@ Tuy nhien khong nen code y nguyen tai lieu; can dieu chinh mot so diem de khop v
 - Da commit Step 1: `afec322 chore(nutrition): seed carb ratio warning config`.
 - Da cap nhat DTO contract cho request/response cua luong user tu de xuat mon.
 - Da chay `.\mvnw.cmd -pl nutrition-service -DskipTests compile`: BUILD SUCCESS.
-- Chua sua service/engine/repository/controller.
+- Da commit Step 2: `14d933e feat(nutrition): extend meal proposal dto contract`.
+- Da cap nhat `DishRepository.searchByName(...)` cho endpoint search mon sau nay.
+- Chua sua service/engine/controller.
 
 ## Nhat ky step
 
@@ -256,3 +258,44 @@ Review can user xac nhan:
 
 - DTO contract dung voi nhu cau FE/BE.
 - Chap nhan viec cac field moi tam thoi chua duoc populate cho den cac step tiep theo.
+
+### Step 3 - Cap nhat repository search mon
+
+Status: DONE
+
+Noi dung da lam:
+
+- Cap nhat `DishRepository`.
+- Them method `searchByName(SlotCode slotCode, String name, Pageable pageable)`.
+- Query loc:
+  - Cung `slotCode`.
+  - `isActive = TRUE`.
+  - Ten mon match theo `LOWER(d.name) LIKE LOWER('%name%')`.
+  - Sap xep theo `d.name`.
+- Them `Pageable` de service/controller sau nay gioi han so ket qua, tranh query search tra qua nhieu item.
+
+Files changed:
+
+- `nutrition-service/src/main/java/org/example/nutritionservice/repository/catalog/DishRepository.java`
+- `doc/UserTuDeXuatContext.md`
+
+Ghi chu cho BE:
+
+- Search khong dau/co dau phu thuoc collation cua column `dishes.name`.
+- Nen verify DB bang `SHOW FULL COLUMNS FROM dishes WHERE Field='name';`.
+- Service sau nen goi repository voi `PageRequest.of(0, limit)` va trim query truoc khi search.
+
+Ghi chu cho FE:
+
+- Endpoint search sau nay se tim trong cung slot mon dang swap, khong tra mon slot khac.
+- BE se gioi han so ket qua; FE nen xu ly list rong.
+
+Verification:
+
+- Da chay `.\mvnw.cmd -pl nutrition-service -DskipTests compile`.
+- Ket qua: BUILD SUCCESS.
+
+Review can user xac nhan:
+
+- Signature repository dung huong cho service search sau nay.
+- Chap nhan dung `Pageable` thay vi query khong gioi han nhu tai lieu ban dau.
