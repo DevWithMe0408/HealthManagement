@@ -133,8 +133,8 @@ Tuy nhien khong nen code y nguyen tai lieu; can dieu chinh mot so diem de khop v
 
 ## Trang thai hien tai
 
-- Step hien tai: Step 6 - Populate unit va baseServingG trong mapper.
-- Trang thai Step 6: DONE, dang cho user review.
+- Step hien tai: Step 7 - Them endpoint search mon.
+- Trang thai Step 7: DONE, dang cho user review.
 - Da xac nhan file context nam tai `doc/UserTuDeXuatContext.md`.
 - Da cap nhat muc dich de file nay phuc vu ca BE va FE.
 - Da ghi rule lam viec: sau moi step dung lai de user review, chi lam tiep khi user OK.
@@ -151,7 +151,9 @@ Tuy nhien khong nen code y nguyen tai lieu; can dieu chinh mot so diem de khop v
 - Da cap nhat `RecommendationApiService.swapDish` de doc `overrideGrams`, truyen fixed serving vao engine va tra carb-bomb warnings.
 - Da commit Step 5: `721a5a5 feat(nutrition): apply override grams in swap flow`.
 - Da populate `unit` va `baseServingG` trong response mapper cua `RecommendationApiService`.
-- Chua sua controller/search service.
+- Da commit Step 6: `764a6fd feat(nutrition): include serving unit metadata`.
+- Da them `DishSearchService` va `DishController` cho endpoint search mon.
+- Chua chay full test suite.
 
 ## Nhat ky step
 
@@ -449,3 +451,74 @@ Review can user xac nhan:
 
 - Pham vi mapper Step 6 dung: populate duong full-day/swap, de history fallback null.
 - FE fallback history null la chap nhan duoc.
+
+### Step 7 - Them endpoint search mon
+
+Status: DONE
+
+Noi dung da lam:
+
+- Tao `DishSearchService`.
+- Tao `DishController`.
+- Them endpoint `GET /api/nutrition/dishes/search`.
+- Sau review cua user, da chinh lai phan tang:
+  - `DishController` chi map HTTP request, resolve user id va goi service.
+  - Validation request search chuyen xuong `DishSearchService`.
+- Request params:
+  - `slotCode`: enum `SlotCode`.
+  - `q`: keyword search, trim, 1-50 ky tu.
+  - `slotKcalTarget`: kcal target cua slot, phai > 0.
+- Headers:
+  - `X-User-Id` hoac `userId` de resolve favorite.
+- Search behavior:
+  - Chi tim mon active trong cung `slotCode`.
+  - Gioi han toi da 20 ket qua bang `PageRequest.of(0, 20)`.
+  - `expectedScore = null`.
+  - `expectedServing` duoc chon theo serving steps tu system config:
+    - `filter.combo_serving_steps` neu `slotCode = COMBO`.
+    - `filter.serving_steps` cho slot con lai.
+  - `expectedActualGrams = baseServingG * expectedServing`.
+  - Populate `unit`, `baseServingG`, `favorite`.
+
+Files changed:
+
+- `nutrition-service/src/main/java/org/example/nutritionservice/service/recommendation/DishSearchService.java`
+- `nutrition-service/src/main/java/org/example/nutritionservice/controller/DishController.java`
+- `doc/UserTuDeXuatContext.md`
+
+Ghi chu cho BE:
+
+- Search service dung `DishRepository.searchByName(...)` da them o Step 3.
+- Favorite dung repository hien co `findByUserId`, khong them method moi.
+- Neu khong co user id, `favorite` se false cho tat ca ket qua.
+- Khong hardcode serving grid; doc config truc tiep tu `ConfigLoaderService`.
+- Controller khong chua business validation/search logic; cac validate request nam trong service.
+
+Ghi chu cho FE:
+
+- Goi API qua gateway/service path:
+  - `GET /api/nutrition/dishes/search?slotCode=TINH_BOT&q=com&slotKcalTarget=400`
+- Response la `DataResponse<List<DishOptionResponse>>`.
+- Moi item co:
+  - `dishId`
+  - `dishName`
+  - `slotCode`
+  - `foodGroupCode`
+  - `expectedScore = null`
+  - `expectedServing`
+  - `expectedActualGrams`
+  - `unit`
+  - `baseServingG`
+  - `favorite`
+- FE can xu ly list rong va khong render score khi `expectedScore == null`.
+
+Verification:
+
+- Da chay `.\mvnw.cmd -pl nutrition-service -DskipTests compile` sau khi them endpoint.
+- Da chay lai `.\mvnw.cmd -pl nutrition-service -DskipTests compile` sau khi chuyen validation tu controller xuong service.
+- Ket qua: BUILD SUCCESS.
+
+Review can user xac nhan:
+
+- Contract endpoint search dung nhu FE can.
+- Gioi han 20 ket qua va expectedServing theo config duoc chap nhan.
