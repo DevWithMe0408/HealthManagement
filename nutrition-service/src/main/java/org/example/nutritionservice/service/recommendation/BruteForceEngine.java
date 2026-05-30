@@ -86,7 +86,8 @@ public class BruteForceEngine {
                     configs,
                     penalty,
                     internalTopK,
-                    topCombinations
+                    topCombinations,
+                    null
             );
         }
 
@@ -116,6 +117,15 @@ public class BruteForceEngine {
             MealTarget mealTarget,
             LoadedConfigs configs,
             BigDecimal penalty) {
+        return findBestServingCombo(pinnedDishes, null, mealTarget, configs, penalty);
+    }
+
+    public MealCombination findBestServingCombo(
+            List<DishCandidate> pinnedDishes,
+            Map<Integer, BigDecimal> fixedServingByIndex,
+            MealTarget mealTarget,
+            LoadedConfigs configs,
+            BigDecimal penalty) {
         PriorityQueue<MealCombination> topCombinations = new PriorityQueue<>(
                 Comparator.comparing(MealCombination::getFinalScore)
         );
@@ -127,7 +137,8 @@ public class BruteForceEngine {
                 configs,
                 penalty,
                 1,
-                topCombinations
+                topCombinations,
+                fixedServingByIndex
         );
         return topCombinations.peek();
     }
@@ -267,13 +278,14 @@ public class BruteForceEngine {
             LoadedConfigs configs,
             BigDecimal penalty,
             int topK,
-            PriorityQueue<MealCombination> topCombinations) {
+            PriorityQueue<MealCombination> topCombinations,
+            Map<Integer, BigDecimal> fixedServingByIndex) {
         if (dishIndex == dishCombo.size()) {
             scoreServingCombination(current, mealTarget, configs, penalty, topK, topCombinations);
             return;
         }
 
-        if (dishIndex > 0 && shouldPrune(current, dishCombo, dishIndex, mealTarget, configs)) {
+        if (dishIndex > 0 && shouldPrune(current, dishCombo, dishIndex, mealTarget, configs, fixedServingByIndex)) {
             if (log.isDebugEnabled()) {
                 log.debug("Pruned serving branch mealType={} dishIndex={}", mealTarget.getMealType(), dishIndex);
             }
@@ -281,6 +293,27 @@ public class BruteForceEngine {
         }
 
         DishCandidate candidate = dishCombo.get(dishIndex);
+        if (fixedServingByIndex != null && fixedServingByIndex.containsKey(dishIndex)) {
+            DishWithServing dishWithServing = withServing(
+                    candidate,
+                    servingFromGrams(candidate, fixedServingByIndex.get(dishIndex))
+            );
+            current.add(dishWithServing);
+            enumerateServings(
+                    dishCombo,
+                    dishIndex + 1,
+                    current,
+                    mealTarget,
+                    configs,
+                    penalty,
+                    topK,
+                    topCombinations,
+                    fixedServingByIndex
+            );
+            current.remove(current.size() - 1);
+            return;
+        }
+
         for (BigDecimal serving : servingSteps(candidate.getSlotCode(), configs)) {
             DishWithServing dishWithServing = withServing(candidate, serving);
             if (violatesWeightConstraint(dishWithServing, configs)) {
@@ -295,7 +328,8 @@ public class BruteForceEngine {
                     configs,
                     penalty,
                     topK,
-                    topCombinations
+                    topCombinations,
+                    fixedServingByIndex
             );
             current.remove(current.size() - 1);
         }
@@ -306,7 +340,8 @@ public class BruteForceEngine {
             List<DishCandidate> dishCombo,
             int dishIndex,
             MealTarget mealTarget,
-            LoadedConfigs configs) {
+            LoadedConfigs configs,
+            Map<Integer, BigDecimal> fixedServingByIndex) {
         BigDecimal kcalSoFar = current.stream()
                 .map(DishWithServing::getKcal)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
@@ -316,7 +351,16 @@ public class BruteForceEngine {
         BigDecimal kcalRemainingMin = BigDecimal.ZERO;
         BigDecimal kcalRemainingMax = BigDecimal.ZERO;
         for (int index = dishIndex; index < dishCombo.size(); index++) {
-            BigDecimal baseKcal = dishCombo.get(index).getBaseKcal();
+            DishCandidate candidate = dishCombo.get(index);
+            if (fixedServingByIndex != null && fixedServingByIndex.containsKey(index)) {
+                BigDecimal fixedKcal = candidate.getBaseKcal()
+                        .multiply(servingFromGrams(candidate, fixedServingByIndex.get(index)));
+                kcalRemainingMin = kcalRemainingMin.add(fixedKcal);
+                kcalRemainingMax = kcalRemainingMax.add(fixedKcal);
+                continue;
+            }
+
+            BigDecimal baseKcal = candidate.getBaseKcal();
             kcalRemainingMin = kcalRemainingMin.add(baseKcal.multiply(minServing));
             kcalRemainingMax = kcalRemainingMax.add(baseKcal.multiply(maxServing));
         }
@@ -376,6 +420,10 @@ public class BruteForceEngine {
                 .fatG(candidate.getBaseFatG().multiply(serving).setScale(CALC_SCALE, RoundingMode.HALF_UP))
                 .carbG(candidate.getBaseCarbG().multiply(serving).setScale(CALC_SCALE, RoundingMode.HALF_UP))
                 .build();
+    }
+
+    private BigDecimal servingFromGrams(DishCandidate candidate, BigDecimal grams) {
+        return grams.divide(candidate.getBaseServingG(), CALC_SCALE, RoundingMode.HALF_UP);
     }
 
     private MealActual toActual(List<DishWithServing> dishes) {

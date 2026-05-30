@@ -133,8 +133,8 @@ Tuy nhien khong nen code y nguyen tai lieu; can dieu chinh mot so diem de khop v
 
 ## Trang thai hien tai
 
-- Step hien tai: Step 3 - Cap nhat repository search mon.
-- Trang thai Step 3: DONE, dang cho user review.
+- Step hien tai: Step 4 - Cap nhat engine fixed serving.
+- Trang thai Step 4: DONE, dang cho user review.
 - Da xac nhan file context nam tai `doc/UserTuDeXuatContext.md`.
 - Da cap nhat muc dich de file nay phuc vu ca BE va FE.
 - Da ghi rule lam viec: sau moi step dung lai de user review, chi lam tiep khi user OK.
@@ -145,7 +145,9 @@ Tuy nhien khong nen code y nguyen tai lieu; can dieu chinh mot so diem de khop v
 - Da chay `.\mvnw.cmd -pl nutrition-service -DskipTests compile`: BUILD SUCCESS.
 - Da commit Step 2: `14d933e feat(nutrition): extend meal proposal dto contract`.
 - Da cap nhat `DishRepository.searchByName(...)` cho endpoint search mon sau nay.
-- Chua sua service/engine/controller.
+- Da commit Step 3: `1b254e7 feat(nutrition): add dish search repository query`.
+- Da cap nhat `BruteForceEngine` de ho tro fixed serving theo index.
+- Chua sua service/controller.
 
 ## Nhat ky step
 
@@ -299,3 +301,51 @@ Review can user xac nhan:
 
 - Signature repository dung huong cho service search sau nay.
 - Chap nhan dung `Pageable` thay vi query khong gioi han nhu tai lieu ban dau.
+
+### Step 4 - Cap nhat engine fixed serving
+
+Status: DONE
+
+Noi dung da lam:
+
+- Cap nhat `BruteForceEngine`.
+- Giu method cu `findBestServingCombo(List<DishCandidate>, MealTarget, LoadedConfigs, BigDecimal)` de backward compatibility.
+- Them overload moi `findBestServingCombo(List<DishCandidate>, Map<Integer, BigDecimal>, MealTarget, LoadedConfigs, BigDecimal)`.
+- `fixedServingByIndex` la map:
+  - Key: index mon trong `pinnedDishes`.
+  - Value: grams user override.
+- Khi index co fixed grams:
+  - Engine tinh serving multiplier = `overrideGrams / baseServingG`.
+  - Engine chi enumerate 1 nhanh cho index do.
+  - Engine skip `violatesWeightConstraint` cho index fixed.
+  - Engine van giu check kcal deviation cu trong `scoreServingCombination`, nen override qua vo ly van co the khong tim duoc combo.
+- Cap nhat prune logic:
+  - Neu slot con lai la fixed serving, prune tinh kcal con lai bang exact fixed kcal.
+  - Tranh prune sai khi fixed serving nam ngoai min/max serving config.
+- `findTopK` tiep tuc truyen `null` cho fixed map, giu behavior recommend full-day nhu cu.
+
+Files changed:
+
+- `nutrition-service/src/main/java/org/example/nutritionservice/service/recommendation/BruteForceEngine.java`
+- `doc/UserTuDeXuatContext.md`
+
+Ghi chu cho BE:
+
+- Step nay moi cap nhat engine. `RecommendationApiService.swapDish` chua build/truyen `fixedServingByIndex`.
+- Step service sau se doc `PinnedDish.overrideGrams`, map slotKey sang index, roi goi overload moi.
+- Backward compatibility duoc giu vi method cu van ton tai.
+
+Ghi chu cho FE:
+
+- Sau khi service duoc noi o step sau, `overrideGrams` se ep BE giu dung gram user chon cho mon pinned.
+- Engine se khong tu doi mon o slot fixed; cac slot khac van chi toi uu serving trong luong swap.
+
+Verification:
+
+- Da chay `.\mvnw.cmd -pl nutrition-service -DskipTests compile`.
+- Ket qua: BUILD SUCCESS.
+
+Review can user xac nhan:
+
+- Engine fixed serving dung voi mo hinh C: giu mon, chi toi uu serving cac slot khac.
+- Chap nhan prune logic tinh exact kcal cho fixed serving de tranh cat nhanh sai.
