@@ -27,10 +27,26 @@ public class UserPreferenceServiceImpl implements UserPreferenceService {
     private static final String DEFAULT_PBF_METHOD = "FORMULA";
     private static final String VALUE_TYPE_STRING = "STRING";
     private static final String PBF_METHOD_DESCRIPTION = "Method tinh PBF: FORMULA (Navy) hoac MODEL_1 (ML)";
-    private static final Set<String> ALLOWED_KEYS = Set.of(PBF_METHOD);
+
+    private static final String MEAL_PLAN_TYPE = "MEAL_PLAN_TYPE";
+    private static final String BREAKFAST_CONFIG = "BREAKFAST_CONFIG";
+    private static final String SNACK_AM_CONFIG = "SNACK_AM_CONFIG";
+    private static final String LUNCH_CONFIG = "LUNCH_CONFIG";
+    private static final String SNACK_PM_CONFIG = "SNACK_PM_CONFIG";
+    private static final String DINNER_CONFIG = "DINNER_CONFIG";
+
+    private static final Set<String> ALLOWED_KEYS = Set.of(
+            PBF_METHOD,
+            MEAL_PLAN_TYPE,
+            BREAKFAST_CONFIG,
+            SNACK_AM_CONFIG,
+            LUNCH_CONFIG,
+            SNACK_PM_CONFIG,
+            DINNER_CONFIG
+    );
     private static final Set<String> ALLOWED_PBF_METHODS = Set.of("FORMULA", "MODEL_1");
 
-    private final UserPreferenceRepository repo;
+    private final UserPreferenceRepository userPreferenceRepositoryrepo;
     private final RabbitTemplate rabbitTemplate;
 
     @Value("${app.rabbitmq.exchange.user-events}")
@@ -41,14 +57,14 @@ public class UserPreferenceServiceImpl implements UserPreferenceService {
 
     @Override
     public List<PreferenceResponse> getAll(String userId) {
-        return repo.findByUserId(userId).stream()
+        return userPreferenceRepositoryrepo.findByUserId(userId).stream()
                 .map(this::toResponse)
                 .toList();
     }
 
     @Override
     public Optional<PreferenceResponse> getOne(String userId, String prefKey) {
-        return repo.findByUserIdAndPrefKey(userId, prefKey).map(this::toResponse);
+        return userPreferenceRepositoryrepo.findByUserIdAndPrefKey(userId, prefKey).map(this::toResponse);
     }
 
     @Override
@@ -57,7 +73,7 @@ public class UserPreferenceServiceImpl implements UserPreferenceService {
         validateKey(prefKey);
         validateValueForKey(prefKey, req.getPrefValue());
 
-        UserPreference pref = repo.findByUserIdAndPrefKey(userId, prefKey)
+        UserPreference pref = userPreferenceRepositoryrepo.findByUserIdAndPrefKey(userId, prefKey)
                 .orElse(UserPreference.builder()
                         .userId(userId)
                         .prefKey(prefKey)
@@ -68,7 +84,7 @@ public class UserPreferenceServiceImpl implements UserPreferenceService {
         pref.setValueType(req.getValueType() != null ? req.getValueType() : VALUE_TYPE_STRING);
         pref.setDescription(descriptionForKey(prefKey));
 
-        UserPreference saved = repo.save(pref);
+        UserPreference saved = userPreferenceRepositoryrepo.save(pref);
         publishEvent(userId, prefKey, saved.getPrefValue());
         return toResponse(saved);
     }
@@ -77,15 +93,15 @@ public class UserPreferenceServiceImpl implements UserPreferenceService {
     @Transactional
     public void delete(String userId, String prefKey) {
         validateKey(prefKey);
-        repo.deleteByUserIdAndPrefKey(userId, prefKey);
+        userPreferenceRepositoryrepo.deleteByUserIdAndPrefKey(userId, prefKey);
         publishEvent(userId, prefKey, null);
     }
 
     @Override
     @Transactional
     public void seedDefaults(String userId) {
-        repo.findByUserIdAndPrefKey(userId, PBF_METHOD)
-                .orElseGet(() -> repo.save(UserPreference.builder()
+        userPreferenceRepositoryrepo.findByUserIdAndPrefKey(userId, PBF_METHOD)
+                .orElseGet(() -> userPreferenceRepositoryrepo.save(UserPreference.builder()
                         .userId(userId)
                         .prefKey(PBF_METHOD)
                         .prefValue(DEFAULT_PBF_METHOD)
