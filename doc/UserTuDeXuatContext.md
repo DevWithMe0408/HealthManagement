@@ -133,12 +133,14 @@ Tuy nhien khong nen code y nguyen tai lieu; can dieu chinh mot so diem de khop v
 
 ## Trang thai hien tai
 
-- Step hien tai: Step 0 - Dong bo context va quy trinh lam viec.
-- Trang thai Step 0: DONE.
+- Step hien tai: Step 1 - Cap nhat DB seed/config.
+- Trang thai Step 1: DONE, dang cho user review.
 - Da xac nhan file context nam tai `doc/UserTuDeXuatContext.md`.
 - Da cap nhat muc dich de file nay phuc vu ca BE va FE.
 - Da ghi rule lam viec: sau moi step dung lai de user review, chi lam tiep khi user OK.
-- Chua sua code tinh nang.
+- Da commit Step 0: `90d2283 docs(nutrition): add user proposed meal context`.
+- Da them seed `warn.carb_ratio_threshold = 0.70` vao `nutrition-service/src/main/resources/db/data.sql`.
+- Chua sua Java code tinh nang.
 - Chua chay test.
 
 ## Nhat ky step
@@ -163,3 +165,37 @@ Review can user xac nhan:
 
 - Context file da dung vi tri va dung muc dich BE/FE.
 - Quy trinh lam viec tung step da dung y user.
+
+### Step 1 - Cap nhat DB seed/config
+
+Status: DONE
+
+Noi dung da lam:
+
+- Them system config `warn.carb_ratio_threshold` vao block `system_config` trong `nutrition-service/src/main/resources/db/data.sql`.
+- Dung `INSERT IGNORE` theo pattern seed hien tai cua project.
+- Gia tri them:
+  - `config_key`: `warn.carb_ratio_threshold`
+  - `config_value`: `0.70`
+  - `value_type`: `DECIMAL`
+  - `description`: `Nguong ti le kcal tu carb de canh bao carb-bomb`
+
+Files changed:
+
+- `nutrition-service/src/main/resources/db/data.sql`
+- `doc/UserTuDeXuatContext.md`
+
+Ghi chu cho BE:
+
+- Config nay tranh loi khi `LoadedConfigs.getDecimal("warn.carb_ratio_threshold")` duoc goi o buoc service sau.
+- Neu database local da seed truoc do, can khoi dong lai service hoac chay SQL insert tuong duong de row duoc them vao DB hien co.
+
+Ghi chu cho FE:
+
+- Nguong warning mac dinh la 70% kcal tu carb tren tong kcal cua bua.
+- FE khong can gui config nay; BE se doc tu `system_config`.
+
+Review can user xac nhan:
+
+- Key config va default `0.70` dung mong muon.
+- Mo ta ASCII trong `data.sql` chap nhan duoc theo style seed hien tai.

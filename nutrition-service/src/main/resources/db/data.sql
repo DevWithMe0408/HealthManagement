@@ -58,6 +58,7 @@ INSERT IGNORE INTO system_config (config_key, config_value, value_type, descript
 ('score.threshold',            '0.20',                          'DECIMAL',    'Nguong deviation macro',           NOW(), NOW()),
 ('reopt.score_threshold',      '50',                            'INT',        'Goi y khi Final Score < nguong nay', NOW(), NOW()),
 ('reopt.score_drop',           '15',                            'INT',        'Goi y khi score giam > so nay',   NOW(), NOW()),
+('warn.carb_ratio_threshold',  '0.70',                          'DECIMAL',    'Nguong ti le kcal tu carb de canh bao carb-bomb', NOW(), NOW()),
 ('display.top_k',              '10',                            'INT',        'So to hop hien thi top',           NOW(), NOW()),
 ('display.slot_alternatives_count', '10',                       'INT',        'So luong alternatives moi slot trong response', NOW(), NOW()),
 ('display.round_step_g',       '25',                            'INT',        'Lam tron serving (gam)',           NOW(), NOW());
