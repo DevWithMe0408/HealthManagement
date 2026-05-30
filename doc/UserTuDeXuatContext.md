@@ -133,8 +133,8 @@ Tuy nhien khong nen code y nguyen tai lieu; can dieu chinh mot so diem de khop v
 
 ## Trang thai hien tai
 
-- Step hien tai: Step 5 - Noi overrideGrams va warnings vao swap service.
-- Trang thai Step 5: DONE, dang cho user review.
+- Step hien tai: Step 6 - Populate unit va baseServingG trong mapper.
+- Trang thai Step 6: DONE, dang cho user review.
 - Da xac nhan file context nam tai `doc/UserTuDeXuatContext.md`.
 - Da cap nhat muc dich de file nay phuc vu ca BE va FE.
 - Da ghi rule lam viec: sau moi step dung lai de user review, chi lam tiep khi user OK.
@@ -149,7 +149,9 @@ Tuy nhien khong nen code y nguyen tai lieu; can dieu chinh mot so diem de khop v
 - Da cap nhat `BruteForceEngine` de ho tro fixed serving theo index.
 - Da commit Step 4: `63d0876 feat(nutrition): support fixed serving optimization`.
 - Da cap nhat `RecommendationApiService.swapDish` de doc `overrideGrams`, truyen fixed serving vao engine va tra carb-bomb warnings.
-- Chua sua controller/search service/mapper `unit` va `baseServingG`.
+- Da commit Step 5: `721a5a5 feat(nutrition): apply override grams in swap flow`.
+- Da populate `unit` va `baseServingG` trong response mapper cua `RecommendationApiService`.
+- Chua sua controller/search service.
 
 ## Nhat ky step
 
@@ -401,3 +403,49 @@ Review can user xac nhan:
 
 - Behavior override serving dung mong muon.
 - Warning carb-bomb nen duoc tinh trong Step 5, con populate `unit/baseServingG` de Step 6.
+
+### Step 6 - Populate unit va baseServingG trong mapper
+
+Status: DONE
+
+Noi dung da lam:
+
+- Cap nhat cac mapper trong `RecommendationApiService`.
+- `toDishResponse(DishWithServing, ...)`:
+  - Populate `unit` tu `dish.getCandidate().getDish().getUnit()`.
+  - Populate `baseServingG` tu `dish.getCandidate().getDish().getBaseServingG()`.
+- `toDishOptionResponse(SlotAlternative, ...)`:
+  - Populate `unit`.
+  - Populate `baseServingG`.
+- `toDishResponse(DishCandidate, BigDecimal, ...)`:
+  - Populate `unit`.
+  - Populate `baseServingG`.
+- `copyDish(...)`:
+  - Preserve `unit`.
+  - Preserve `baseServingG`.
+
+Files changed:
+
+- `nutrition-service/src/main/java/org/example/nutritionservice/service/recommendation/RecommendationApiService.java`
+- `doc/UserTuDeXuatContext.md`
+
+Ghi chu cho BE:
+
+- Full-day recommendation, swap result va slot alternatives da co `unit/baseServingG` khi du lieu di qua `RecommendationApiService`.
+- Meal-log history mapper trong `RecommendationController.toDishResponse(MealLogDish)` chua populate 2 field nay theo scope hien tai; se null neu response history dung DTO nay.
+- Khong them query moi, lay truc tiep tu `DishCandidate.getDish()`.
+
+Ghi chu cho FE:
+
+- FE co the render serving dang `servingMultiplier unit (actualGrams g)` cho response full-day/swap/alternatives.
+- Voi meal-log history, `unit/baseServingG` van co the null; FE can fallback hien thi grams.
+
+Verification:
+
+- Da chay `.\mvnw.cmd -pl nutrition-service -DskipTests compile`.
+- Ket qua: BUILD SUCCESS.
+
+Review can user xac nhan:
+
+- Pham vi mapper Step 6 dung: populate duong full-day/swap, de history fallback null.
+- FE fallback history null la chap nhan duoc.

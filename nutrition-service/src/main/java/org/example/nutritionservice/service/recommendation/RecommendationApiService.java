@@ -331,6 +331,8 @@ public class RecommendationApiService {
                 .servingMultiplier(dish.getServingMultiplier())
                 .actualGrams(dish.getActualGrams())
                 .dishKcal(dish.getKcal())
+                .unit(dish.getCandidate().getDish().getUnit())
+                .baseServingG(dish.getCandidate().getDish().getBaseServingG())
                 .favorite(favorites.contains(dish.getCandidate().getDishId()))
                 .build();
     }
@@ -344,6 +346,8 @@ public class RecommendationApiService {
                 .expectedScore(alternative.getExpectedScore())
                 .expectedServing(alternative.getExpectedServing())
                 .expectedActualGrams(alternative.getExpectedActualGrams())
+                .unit(alternative.getCandidate().getDish().getUnit())
+                .baseServingG(alternative.getCandidate().getDish().getBaseServingG())
                 .favorite(favorites.contains(alternative.getDishId()))
                 .build();
     }
@@ -510,6 +514,8 @@ public class RecommendationApiService {
                 .servingMultiplier(servingMultiplier)
                 .actualGrams(candidate.getBaseServingG().multiply(servingMultiplier).setScale(FINAL_SCALE, RoundingMode.HALF_UP))
                 .dishKcal(candidate.getBaseKcal().multiply(servingMultiplier).setScale(FINAL_SCALE, RoundingMode.HALF_UP))
+                .unit(candidate.getDish().getUnit())
+                .baseServingG(candidate.getDish().getBaseServingG())
                 .favorite(favorites.contains(candidate.getDishId()))
                 .build();
     }
@@ -872,6 +878,8 @@ public class RecommendationApiService {
                 .servingMultiplier(dish.getServingMultiplier())
                 .actualGrams(dish.getActualGrams())
                 .dishKcal(dish.getDishKcal())
+                .unit(dish.getUnit())
+                .baseServingG(dish.getBaseServingG())
                 .favorite(dish.isFavorite())
                 .build();
     }
