@@ -481,3 +481,30 @@ Verification:
 - `.\mvnw.cmd -q -pl health-data-service -Dtest=CalculatedMetricServiceImplTest test` thanh cong.
 
 Commit: `Add Model 1 PBF service tests`.
+
+## Step 3 Checkpoint 6 - Unit test submit fallback khi Model 1 loi
+
+Trang thai: da thuc hien, test thanh cong, da commit.
+
+Thay doi:
+
+- Them `HealthDataSubmitServiceImplTest`.
+- Test case co base metric thay doi va `predictAndSaveModel1Pbf(...)` throw exception:
+  - `processSubmittedHealthData(...)` khong nem exception.
+  - Van verify `recalculateAndSaveDerivedMetrics(...)` da duoc goi truoc.
+  - Verify submit flow da thu goi `predictAndSaveModel1Pbf(...)`.
+- Test case base metric khong thay doi:
+  - Khong goi recalculate.
+  - Khong goi Model 1.
+
+Pham vi checkpoint nay:
+
+- Chi test fallback submit service bang mock thuan.
+- Khong khoi dong Spring context.
+- Khong goi Python service/DB that.
+
+Verification:
+
+- `.\mvnw.cmd -q -pl health-data-service -Dtest=HealthDataSubmitServiceImplTest test` thanh cong.
+
+Commit: `Add Model 1 submit fallback tests`.
