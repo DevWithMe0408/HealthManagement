@@ -30,6 +30,9 @@ spring:
       port: 6379
 
 app:
+  ml:
+    pbf-url: ${ML_PBF_URL:http://localhost:8000}
+    timeout-ms: ${ML_PBF_TIMEOUT_MS:3000}
   rabbitmq:
     exchange:
       user-events: user.events.exchange

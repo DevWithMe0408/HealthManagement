@@ -251,3 +251,106 @@ Next action de deploy:
 - Sau do moi sang buoc tich hop Model 1 ML that.
 
 Commit: `Record Model 1 prep handoff state`.
+
+## Step 3 - Danh gia tich hop FastAPI Model 1
+
+Trang thai: da doc `doc/HuongDanThucHienBuoc3_TichHopModel1.md`, da danh gia kha thi, chua implement BE Step 3.
+
+Phan A - Python/FastAPI:
+
+- User da bao da thuc hien xong phan A trong project rieng `pbf-ml-service`.
+- Truoc khi noi BE, can verify bang tay:
+  - `GET http://localhost:8000/health` tra `status=ok` va `model_version`.
+  - `POST http://localhost:8000/v1/predict/pbf` voi 1 dong test co ket qua PBF hop ly.
+  - Xac nhan `Sex_M = 1` la nam, `0` la nu theo dung pipeline train.
+  - Xac nhan metadata model co raw input columns dung 9 cot: `Sex_M`, `Age`, `Weight`, `Height`, `Neck`, `Chest`, `Abdomen`, `Hip`, `Thigh`.
+
+Danh gia BE Step 3:
+
+- Co the thuc hien duoc voi code hien tai.
+- Storage path da san sang tu Step 2:
+  - `CalculatedMetricSnapshot.method` da co.
+  - `saveSystemCalculatedMetric(..., method)` da co trong `CalculatedMetricServiceImpl` va dang luu formula voi `method = "FORMULA"`.
+  - `BodyClassificationServiceImpl` da doc `MODEL_1` dung method va fallback sang `FORMULA`.
+- Khi co gia tri tu Python, chi can luu snapshot `IndicatorType.PBF` voi `method = "MODEL_1"`.
+
+Diem can chinh so voi guide:
+
+- Guide B4 co helper mau `baseMetricService.getLatestValue(...)`, nhung code hien tai khong co method nay.
+- Can dung API thuc te:
+  - `baseMetricService.getLatestBaseMetric(userId, type).map(BaseMetricValue::getValue).orElse(null)`.
+- `saveSystemCalculatedMetric(...)` hien la `private` trong `CalculatedMetricServiceImpl`, nen method `predictAndSaveModel1Pbf(...)` nen dat trong cung impl de goi lai duoc, dung nhu guide.
+- Nen config timeout that cho `RestClient` bang `ClientHttpRequestFactory`, khong chi khai bao `timeout-ms`.
+- ML call phai boc try/catch trong submit service de submit khong fail khi Python service chet/timeout.
+- Can xu ly loi DB enum MySQL truoc khi E2E:
+  - DB hien co `indicator_type` dang la MySQL `enum(...)` cu, chua co `ABDOMEN`/`THIGH`.
+  - Can migrate cac cot `indicator_type` sang `VARCHAR` hoac them enum values truoc khi tao user/submit du lieu moi.
+
+Ke hoach thuc hien BE Step 3 neu duoc xac nhan:
+
+1. Cap nhat `health-data-service/src/main/resources/application.yml`:
+   - Them `app.ml.pbf-url`.
+   - Them `app.ml.timeout-ms`.
+2. Tao DTO client cho Python trong package moi, du kien `org.example.healthdataservice.dto.ml`:
+   - `PbfPredictRequest` voi JSON snake_case `sex_m`.
+   - `PbfPredictResponse` voi JSON snake_case `model_version`.
+3. Tao `Model1PbfClient`:
+   - Dung `RestClient`.
+   - Base URL lay tu `${app.ml.pbf-url}`.
+   - Timeout lay tu `${app.ml.timeout-ms}`.
+   - POST `/v1/predict/pbf`.
+   - Tra ve PBF va log can thiet; exception de caller quyet dinh fallback.
+4. Cap nhat `CalculatedMetricService`:
+   - Them `void predictAndSaveModel1Pbf(String userId, LocalDateTime now);`.
+5. Cap nhat `CalculatedMetricServiceImpl`:
+   - Inject `Model1PbfClient`.
+   - Lay profile tu `userProfileMirrorService`.
+   - Tinh age tu `birthDate`.
+   - Lay latest base metrics bat buoc: `WEIGHT`, `HEIGHT`, `NECK`, `BUST`, `ABDOMEN`, `HIP`, `THIGH`.
+   - Map `BUST -> chest`, `ABDOMEN -> abdomen`, `THIGH -> thigh`.
+   - Neu thieu input/profile thi log va bo qua, van giu PBF formula.
+   - Goi Python va luu `IndicatorType.PBF` voi `method = "MODEL_1"`.
+6. Cap nhat `HealthDataSubmitServiceImpl`:
+   - Sau `recalculateAndSaveDerivedMetrics(...)`, goi `predictAndSaveModel1Pbf(userId, now)` trong try/catch.
+   - Khong lam fail `/submit` khi model service loi.
+7. Them test:
+   - Unit test cho `CalculatedMetricServiceImpl.predictAndSaveModel1Pbf(...)` voi du input thi goi client va save `MODEL_1`.
+   - Test thieu `THIGH`/profile thi skip.
+   - Test `HealthDataSubmitServiceImpl` khong fail khi `predictAndSaveModel1Pbf` throw exception.
+8. Chay verification:
+   - `.\mvnw.cmd -q -pl health-data-service -am compile`
+   - Unit test lien quan.
+   - Neu Python service dang chay va DB da migrate, test E2E theo Phan C cua guide.
+
+Ket luan:
+
+- OK de thuc hien BE Step 3 sau khi user xac nhan.
+- Preconditions quan trong: Python service phan A phai pass sanity check va DB enum issue phai duoc migrate truoc E2E.
+
+## Step 3 Checkpoint 1 - Config va DTO ML
+
+Trang thai: da thuc hien, cho review, chua commit.
+
+Thay doi:
+
+- Cap nhat `health-data-service/src/main/resources/application.yml`:
+  - `app.ml.pbf-url: ${ML_PBF_URL:http://localhost:8000}`
+  - `app.ml.timeout-ms: ${ML_PBF_TIMEOUT_MS:3000}`
+- Them package `org.example.healthdataservice.dto.ml`.
+- Them `PbfPredictRequest`:
+  - Co `@JsonProperty("sex_m")` cho `sexM`.
+  - Cac field raw: `age`, `weight`, `height`, `neck`, `chest`, `abdomen`, `hip`, `thigh`.
+- Them `PbfPredictResponse`:
+  - `pbf`
+  - `modelVersion` map JSON `model_version`.
+
+Pham vi checkpoint nay:
+
+- Chua tao HTTP client.
+- Chua goi FastAPI trong submit.
+- Chua luu `MODEL_1`.
+
+Verification:
+
+- Lan dau chay compile trong sandbox fail do Maven bi chan network khi resolve `spring-boot-starter-parent`.
+- Chay lai voi quyen escalated: `.\mvnw.cmd -q -pl health-data-service -am compile` thanh cong.
