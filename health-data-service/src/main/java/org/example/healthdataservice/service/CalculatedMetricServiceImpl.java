@@ -80,7 +80,7 @@ public class CalculatedMetricServiceImpl implements CalculatedMetricService {
 
         // Lấy các giá trị cơ bản mới nhất
         // Xác định các IndicatorType cơ bản cần thiết cho tất cả các phép tính
-        Set<IndicatorType> requiredBaseTypes = Stream.of(IndicatorType.HEIGHT, IndicatorType.WEIGHT, IndicatorType.WAIST,
+        Set<IndicatorType> requiredBaseTypes = Stream.of(IndicatorType.HEIGHT, IndicatorType.WEIGHT, IndicatorType.ABDOMEN,
                 IndicatorType.HIP, IndicatorType.NECK, IndicatorType.ACTIVITY_FACTOR
         ).collect(Collectors.toSet());
 
@@ -106,7 +106,7 @@ public class CalculatedMetricServiceImpl implements CalculatedMetricService {
         // Helper để lấy giá trị từ map, trả về null nếu không có
         Double height = latestBaseValues.get(IndicatorType.HEIGHT) != null ? latestBaseValues.get(IndicatorType.HEIGHT).getValue() : null;
         Double weight = latestBaseValues.get(IndicatorType.WEIGHT) != null ? latestBaseValues.get(IndicatorType.WEIGHT).getValue() : null;
-        Double waist = latestBaseValues.get(IndicatorType.WAIST) != null ? latestBaseValues.get(IndicatorType.WAIST).getValue() : null;
+        Double abdomen = latestBaseValues.get(IndicatorType.ABDOMEN) != null ? latestBaseValues.get(IndicatorType.ABDOMEN).getValue() : null;
         Double hip = latestBaseValues.get(IndicatorType.HIP) != null ? latestBaseValues.get(IndicatorType.HIP).getValue() : null;
         Double neck = latestBaseValues.get(IndicatorType.NECK) != null ? latestBaseValues.get(IndicatorType.NECK).getValue() : null;
         Double activityFactor = latestBaseValues.get(IndicatorType.ACTIVITY_FACTOR) != null ? latestBaseValues.get(IndicatorType.ACTIVITY_FACTOR).getValue() : null;
@@ -134,13 +134,13 @@ public class CalculatedMetricServiceImpl implements CalculatedMetricService {
 
         // Tính toán PBF
         if (affects(IndicatorType.PBF, changedBaseMetrics) || isFullRecalculation(changedBaseMetrics)) {
-            Double pbf = healthCalculator.calculatePBF(genderString, waist, hip, neck, height, age);
+            Double pbf = healthCalculator.calculatePBF(genderString, abdomen, hip, neck, height, age);
             saveSystemCalculatedMetric(userId, IndicatorType.PBF, pbf, now);
         }
 
         // Tính toán WHR
         if (affects(IndicatorType.WHR, changedBaseMetrics) || isFullRecalculation(changedBaseMetrics)) {
-            Double whr = healthCalculator.calculateWHR(waist, hip);
+            Double whr = healthCalculator.calculateWHR(abdomen, hip);
             saveSystemCalculatedMetric(userId, IndicatorType.WHR, whr, now);
         }
 
@@ -151,7 +151,7 @@ public class CalculatedMetricServiceImpl implements CalculatedMetricService {
     public void recalculateAllDerivedMetricsForUser(String userId) {
         log.info("Recalculating all derived metrics for userId {}",userId);
         Set<IndicatorType> allRelevantBaseMetrics = Stream.of(
-                IndicatorType.HEIGHT, IndicatorType.WEIGHT,IndicatorType.WAIST,
+                IndicatorType.HEIGHT, IndicatorType.WEIGHT,IndicatorType.ABDOMEN,
                 IndicatorType.HIP,IndicatorType.NECK,IndicatorType.ACTIVITY_FACTOR
         ).collect(Collectors.toSet());
         recalculateAndSaveDerivedMetrics(userId, allRelevantBaseMetrics);
@@ -192,9 +192,9 @@ public class CalculatedMetricServiceImpl implements CalculatedMetricService {
                     changedBaseTypes.contains(IndicatorType.HEIGHT) || changedBaseTypes.contains(IndicatorType.WEIGHT)
                             || changedBaseTypes.contains(IndicatorType.ACTIVITY_FACTOR);
             case PBF ->
-                    changedBaseTypes.contains(IndicatorType.HEIGHT) || changedBaseTypes.contains(IndicatorType.WAIST)
+                    changedBaseTypes.contains(IndicatorType.HEIGHT) || changedBaseTypes.contains(IndicatorType.ABDOMEN)
                             || changedBaseTypes.contains(IndicatorType.HIP) || changedBaseTypes.contains(IndicatorType.NECK);
-            case WHR -> changedBaseTypes.contains(IndicatorType.WAIST) || changedBaseTypes.contains(IndicatorType.HIP);
+            case WHR -> changedBaseTypes.contains(IndicatorType.ABDOMEN) || changedBaseTypes.contains(IndicatorType.HIP);
             default -> false;
         };
     }
@@ -205,7 +205,7 @@ public class CalculatedMetricServiceImpl implements CalculatedMetricService {
         // Nếu set này chứa tất cả các base metric có thể có, coi như là full recalculate
         return changedBaseMetrics.contains(IndicatorType.HEIGHT) &&
                 changedBaseMetrics.contains(IndicatorType.WEIGHT) &&
-                changedBaseMetrics.contains(IndicatorType.WAIST) &&
+                changedBaseMetrics.contains(IndicatorType.ABDOMEN) &&
                 changedBaseMetrics.contains(IndicatorType.HIP) &&
                 changedBaseMetrics.contains(IndicatorType.NECK) &&
                 changedBaseMetrics.contains(IndicatorType.BUST) &&

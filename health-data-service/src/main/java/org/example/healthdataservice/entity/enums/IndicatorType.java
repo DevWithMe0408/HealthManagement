@@ -8,10 +8,11 @@ import lombok.Setter;
 public enum IndicatorType {
     HEIGHT(IndicatorCategory.BASE,"Chiều cao","cm", MeasurementFrequency.YEARLY), // chiều cao
     WEIGHT(IndicatorCategory.BASE, "Cân nặng", "kg", MeasurementFrequency.WEEKLY), // cân nặng
-    WAIST(IndicatorCategory.BASE, "Vòng eo", "cm",MeasurementFrequency.MONTHLY),
+    ABDOMEN(IndicatorCategory.BASE, "Vòng bụng", "cm",MeasurementFrequency.MONTHLY),
     HIP(IndicatorCategory.BASE, "Vòng hông", "cm",MeasurementFrequency.MONTHLY),
     NECK(IndicatorCategory.BASE, "Vòng cổ", "cm", MeasurementFrequency.MONTHLY),
     BUST(IndicatorCategory.BASE, "Vòng ngực", "cm",MeasurementFrequency.MONTHLY), // Giả sử bạn có chỉ số này
+    THIGH(IndicatorCategory.BASE, "Vòng đùi", "cm",MeasurementFrequency.MONTHLY),
     ACTIVITY_FACTOR(IndicatorCategory.BASE, "Hệ số vận động", null,MeasurementFrequency.ON_CHANGE), // Không có unit cụ thể
 
     // Có thể thêm các chỉ số cơ bản khác sau này:

@@ -16,10 +16,11 @@ public class SubmitHealthDataRequest {
     private List<BaseMetricInput> baseMetrics;
     private Double height;
     private Double weight;
-    private Double waist;
+    private Double abdomen;
     private Double hip;
     private Double neck;
     private Double bust;
+    private Double thigh;
     private Double activityFactor;
 
     @JsonProperty("BMINew")

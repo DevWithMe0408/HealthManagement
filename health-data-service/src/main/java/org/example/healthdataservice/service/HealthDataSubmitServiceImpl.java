@@ -118,10 +118,11 @@ public class HealthDataSubmitServiceImpl implements HealthDataSubmitService {
                                                Set<IndicatorType> changedMetricsCollector) {
         saveBaseMetricFromRequest(request.getUserId(), IndicatorType.HEIGHT, request.getHeight(), recordedAt, changedMetricsCollector);
         saveBaseMetricFromRequest(request.getUserId(), IndicatorType.WEIGHT, request.getWeight(), recordedAt, changedMetricsCollector);
-        saveBaseMetricFromRequest(request.getUserId(), IndicatorType.WAIST, request.getWaist(), recordedAt, changedMetricsCollector);
+        saveBaseMetricFromRequest(request.getUserId(), IndicatorType.ABDOMEN, request.getAbdomen(), recordedAt, changedMetricsCollector);
         saveBaseMetricFromRequest(request.getUserId(), IndicatorType.HIP, request.getHip(), recordedAt, changedMetricsCollector);
         saveBaseMetricFromRequest(request.getUserId(), IndicatorType.NECK, request.getNeck(), recordedAt, changedMetricsCollector);
         saveBaseMetricFromRequest(request.getUserId(), IndicatorType.BUST, request.getBust(), recordedAt, changedMetricsCollector);
+        saveBaseMetricFromRequest(request.getUserId(), IndicatorType.THIGH, request.getThigh(), recordedAt, changedMetricsCollector);
         saveBaseMetricFromRequest(request.getUserId(), IndicatorType.ACTIVITY_FACTOR, request.getActivityFactor(), recordedAt, changedMetricsCollector);
     }
 
