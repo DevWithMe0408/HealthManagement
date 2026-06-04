@@ -382,3 +382,39 @@ Pham vi checkpoint nay:
 Verification:
 
 - `.\mvnw.cmd -q -pl health-data-service -am compile` thanh cong.
+
+Commit: `Add Model 1 PBF client`.
+
+## Step 3 Checkpoint 3 - Predict and save MODEL_1 PBF service method
+
+Trang thai: da thuc hien, cho review, chua commit.
+
+Thay doi:
+
+- Cap nhat `CalculatedMetricService`:
+  - Them `predictAndSaveModel1Pbf(String userId, LocalDateTime now)`.
+- Cap nhat `CalculatedMetricServiceImpl`:
+  - Inject `Model1PbfClient`.
+  - Them constant `PBF_METHOD_MODEL_1 = "MODEL_1"`.
+  - Lay profile tu `userProfileMirrorService`.
+  - Skip Model 1 neu thieu profile, gender, birthDate hoac age khong hop le.
+  - Lay latest base metrics bat buoc bang API that cua code hien tai:
+    - `baseMetricService.getLatestBaseMetrics(userId, requiredBaseTypes)`.
+  - Required metrics: `WEIGHT`, `HEIGHT`, `NECK`, `BUST`, `ABDOMEN`, `HIP`, `THIGH`.
+  - Map:
+    - `Gender.MALE -> sexM=1`, con lai `0`.
+    - `BUST -> chest`.
+    - `ABDOMEN -> abdomen`.
+    - `THIGH -> thigh`.
+  - Neu thieu metric hoac metric <= 0 thi log va skip, van giu PBF formula.
+  - Goi `model1PbfClient.predictPbf(...)`.
+  - Neu response co PBF thi luu `IndicatorType.PBF` voi `method = "MODEL_1"` qua `saveSystemCalculatedMetric(...)`.
+
+Pham vi checkpoint nay:
+
+- Chua goi `predictAndSaveModel1Pbf(...)` trong submit flow.
+- Chua them unit test cho method moi.
+
+Verification:
+
+- `.\mvnw.cmd -q -pl health-data-service -am compile` thanh cong.

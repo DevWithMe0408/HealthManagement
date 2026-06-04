@@ -1,5 +1,7 @@
 package org.example.healthdataservice.service;
 
+import org.example.healthdataservice.client.Model1PbfClient;
+import org.example.healthdataservice.dto.ml.PbfPredictRequest;
 import org.example.healthdataservice.entity.BaseMetricValue;
 import org.example.healthdataservice.entity.CalculatedMetricSnapshot;
 import org.example.healthdataservice.entity.Unit;
@@ -30,21 +32,25 @@ public class CalculatedMetricServiceImpl implements CalculatedMetricService {
 
     private static final Logger log = LoggerFactory.getLogger(CalculatedMetricServiceImpl.class);
     private static final String PBF_METHOD_FORMULA = "FORMULA";
+    private static final String PBF_METHOD_MODEL_1 = "MODEL_1";
 
     private final CalculatedMetricSnapshotRepository snapshotRepository;
     private final BaseMetricService baseMetricService;
     private final UnitRepository unitRepository;
     private final HealthCalculator healthCalculator;
     private final UserProfileMirrorService userProfileMirrorService;
+    private final Model1PbfClient model1PbfClient;
 
     @Autowired
     public CalculatedMetricServiceImpl(CalculatedMetricSnapshotRepository snapshotRepository, BaseMetricService baseMetricService,
-                                       UnitRepository unitRepository, HealthCalculator healthCalculator, UserProfileMirrorService userProfileMirrorService) {
+                                       UnitRepository unitRepository, HealthCalculator healthCalculator,
+                                       UserProfileMirrorService userProfileMirrorService, Model1PbfClient model1PbfClient) {
         this.snapshotRepository = snapshotRepository;
         this.baseMetricService = baseMetricService;
         this.unitRepository = unitRepository;
         this.healthCalculator = healthCalculator;
         this.userProfileMirrorService = userProfileMirrorService;
+        this.model1PbfClient = model1PbfClient;
     }
 
     @Override
@@ -156,6 +162,77 @@ public class CalculatedMetricServiceImpl implements CalculatedMetricService {
                 IndicatorType.HIP,IndicatorType.NECK,IndicatorType.ACTIVITY_FACTOR
         ).collect(Collectors.toSet());
         recalculateAndSaveDerivedMetrics(userId, allRelevantBaseMetrics);
+    }
+
+    @Override
+    @Transactional
+    public void predictAndSaveModel1Pbf(String userId, LocalDateTime now) {
+        Optional<UserForHealthData> userProfileOpt = userProfileMirrorService.getUserProfile(userId);
+        if (userProfileOpt.isEmpty()) {
+            log.info("Skipping Model 1 PBF for userId {} because profile is missing.", userId);
+            return;
+        }
+
+        UserForHealthData profile = userProfileOpt.get();
+        if (profile.getGender() == null || profile.getBirthDate() == null) {
+            log.info("Skipping Model 1 PBF for userId {} because gender or birthDate is missing.", userId);
+            return;
+        }
+
+        double age = Period.between(profile.getBirthDate(), LocalDate.now()).getYears();
+        if (age <= 0) {
+            log.info("Skipping Model 1 PBF for userId {} because age is invalid: {}", userId, age);
+            return;
+        }
+
+        Set<IndicatorType> requiredBaseTypes = Stream.of(
+                IndicatorType.WEIGHT,
+                IndicatorType.HEIGHT,
+                IndicatorType.NECK,
+                IndicatorType.BUST,
+                IndicatorType.ABDOMEN,
+                IndicatorType.HIP,
+                IndicatorType.THIGH
+        ).collect(Collectors.toSet());
+        Map<IndicatorType, BaseMetricValue> latestBaseValues = baseMetricService.getLatestBaseMetrics(userId, requiredBaseTypes);
+
+        Double weight = latestBaseValue(latestBaseValues, IndicatorType.WEIGHT);
+        Double height = latestBaseValue(latestBaseValues, IndicatorType.HEIGHT);
+        Double neck = latestBaseValue(latestBaseValues, IndicatorType.NECK);
+        Double chest = latestBaseValue(latestBaseValues, IndicatorType.BUST);
+        Double abdomen = latestBaseValue(latestBaseValues, IndicatorType.ABDOMEN);
+        Double hip = latestBaseValue(latestBaseValues, IndicatorType.HIP);
+        Double thigh = latestBaseValue(latestBaseValues, IndicatorType.THIGH);
+
+        if (Stream.of(weight, height, neck, chest, abdomen, hip, thigh).anyMatch(value -> value == null || value <= 0)) {
+            log.info("Skipping Model 1 PBF for userId {} because one or more required body measurements are missing or invalid.", userId);
+            return;
+        }
+
+        PbfPredictRequest request = PbfPredictRequest.builder()
+                .sexM(profile.getGender() == Gender.MALE ? 1 : 0)
+                .age(age)
+                .weight(weight)
+                .height(height)
+                .neck(neck)
+                .chest(chest)
+                .abdomen(abdomen)
+                .hip(hip)
+                .thigh(thigh)
+                .build();
+
+        Double pbfModel = model1PbfClient.predictPbf(request);
+        if (pbfModel == null) {
+            log.info("Skipping Model 1 PBF save for userId {} because prediction response is empty.", userId);
+            return;
+        }
+
+        saveSystemCalculatedMetric(userId, IndicatorType.PBF, pbfModel, now, PBF_METHOD_MODEL_1);
+    }
+
+    private Double latestBaseValue(Map<IndicatorType, BaseMetricValue> latestBaseValues, IndicatorType type) {
+        BaseMetricValue metric = latestBaseValues.get(type);
+        return metric != null ? metric.getValue() : null;
     }
 
     private void saveSystemCalculatedMetric(String userId, IndicatorType type, Double value, LocalDateTime calculatedAt, String method) {

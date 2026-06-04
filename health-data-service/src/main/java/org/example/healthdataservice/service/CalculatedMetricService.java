@@ -29,6 +29,8 @@ public interface CalculatedMetricService {
      */
     void recalculateAllDerivedMetricsForUser(String userId);
 
+    void predictAndSaveModel1Pbf(String userId, LocalDateTime now);
+
     Optional<CalculatedMetricSnapshot> getLatestSnapshot(String userId, IndicatorType type);
 
     Optional<CalculatedMetricSnapshot> getLatestSnapshotByMethod(String userId, IndicatorType type, String method);
