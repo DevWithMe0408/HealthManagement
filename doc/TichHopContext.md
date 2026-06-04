@@ -547,3 +547,78 @@ Viec con lai de xac nhan E2E:
 - Can verify `/constitution` co `pbfFormula`, `pbfModel` va preference `MODEL_1` lam `pbfSource='MODEL_1'`.
 
 Commit: `Record Model 1 BE final verification`.
+
+## Step 3 Checkpoint 8 - E2E readiness cho Part C
+
+Trang thai: da thuc hien read-only readiness, da commit.
+
+Kiem tra read-only da thuc hien:
+
+- Doc `health-data-service/src/main/resources/application.yml`:
+  - Health-data-service port: `8085`.
+  - DB: `jdbc:mysql://localhost:3306/health_db`.
+  - ML URL mac dinh: `http://localhost:8000`.
+  - ML timeout: `${ML_PBF_TIMEOUT_MS:3000}`.
+- Goi `GET http://localhost:8000/health`:
+  - Ket qua: Python PBF service dang chay.
+  - Response: `status=ok`, `model_version=v4`.
+- Kiem tra port `8085`:
+  - Chua co process health-data-service listen tren port nay.
+  - Vi vay chua the goi `/api/health-data/submit` E2E ngay tai thoi diem checkpoint.
+- Doc `HealthDataController` va security:
+  - API submit: `POST /api/health-data/submit`.
+  - Controller bat buoc header `userId`.
+  - Security filter co the authenticate bang header:
+    - `X-User-Id` hoac `userId`.
+    - `X-Username` hoac `username`.
+    - `X-Roles` hoac `userRoles`.
+  - Do `SecurityConfig` yeu cau authenticated cho moi endpoint tru `/actuator/**` va `/error`, request E2E nen gui du bo header:
+    - `userId: <test-user-id>`
+    - `X-User-Id: <test-user-id>`
+    - `X-Username: e2e-model1`
+    - `X-Roles: ROLE_USER`
+
+Ket luan:
+
+- Python service san sang cho E2E.
+- BE code/test da san sang.
+- Chua thuc hien Part C submit E2E vi health-data-service chua chay tren port `8085`.
+- Chua thuc hien bat ky thao tac ghi DB nao trong checkpoint nay.
+
+Dieu kien de chay E2E that:
+
+1. Dam bao DB `health_db` da migrate enum/string cho `indicator_type` va co `ABDOMEN`/`THIGH`.
+2. Chay health-data-service tren port `8085`.
+3. Chon user test da co profile trong `user_for_health_data` voi `gender` va `birth_data`.
+4. Submit du input:
+   - `height`, `weight`, `neck`, `bust`, `abdomen`, `hip`, `thigh`, `activityFactor`.
+5. Verify DB `calculated_metric_snapshots` co PBF:
+   - `method='FORMULA'`.
+   - `method='MODEL_1'`.
+6. Verify API:
+   - `/api/health-data/dashboard-metrics` co `pbfFormula` va `pbfModel`.
+   - `/api/health-data/constitution` tra dung `pbfSource` theo preference/fallback.
+
+Lenh mau cho E2E submit sau khi user cho phep ghi DB:
+
+```powershell
+$headers = @{
+  "userId" = "<test-user-id>"
+  "X-User-Id" = "<test-user-id>"
+  "X-Username" = "e2e-model1"
+  "X-Roles" = "ROLE_USER"
+}
+$body = @{
+  height = 175
+  weight = 70
+  neck = 38
+  bust = 95
+  abdomen = 84
+  hip = 90
+  thigh = 55
+  activityFactor = 1.55
+} | ConvertTo-Json
+Invoke-RestMethod -Method Post -Uri http://localhost:8085/api/health-data/submit -Headers $headers -ContentType "application/json" -Body $body
+```
+
+Commit: `Record Model 1 E2E readiness`.
