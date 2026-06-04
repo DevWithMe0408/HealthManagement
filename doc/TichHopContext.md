@@ -508,3 +508,42 @@ Verification:
 - `.\mvnw.cmd -q -pl health-data-service -Dtest=HealthDataSubmitServiceImplTest test` thanh cong.
 
 Commit: `Add Model 1 submit fallback tests`.
+
+## Step 3 Checkpoint 7 - Final BE verification
+
+Trang thai: da thuc hien, verification thanh cong, da commit.
+
+Kiem tra da chay:
+
+- `.\mvnw.cmd -q -pl health-data-service -am compile`
+  - Ket qua: thanh cong.
+- `.\mvnw.cmd -q -pl health-data-service "-Dtest=CalculatedMetricServiceImplTest,HealthDataSubmitServiceImplTest,BodyClassificationServiceImplTest" test`
+  - Ket qua: thanh cong.
+  - Bao phu cac luong:
+    - Luu PBF `MODEL_1` khi du input.
+    - Skip Model 1 khi thieu `THIGH`/profile.
+    - Submit khong fail khi Model 1 throw exception.
+    - Constitution chon/fallback `FORMULA` va `MODEL_1`.
+- `.\mvnw.cmd -q -pl health-data-service test`
+  - Ket qua: thanh cong.
+  - Test Spring context co log Eureka connection refused do discovery-server local khong chay, nhung khong fail.
+- `GET http://localhost:8000/health`
+  - Ket qua: Python PBF service dang chay, tra `status=ok`, `model_version=v4`.
+
+Ket luan BE Step 3:
+
+- Phan B trong guide da hoan tat o BE.
+- BE co the goi Python service qua `app.ml.pbf-url`, timeout theo `app.ml.timeout-ms`.
+- Submit co trigger Model 1 sau recalc formula va co fallback khi Python loi.
+- Storage/API selection da san sang tu Step 2: PBF formula luu `method="FORMULA"`, PBF model luu `method="MODEL_1"`.
+
+Viec con lai de xac nhan E2E:
+
+- Can chay manual Part C tren moi truong co DB da migrate va health-data-service dang serve API.
+- Khong tu submit E2E vao DB that trong checkpoint nay vi day la thao tac ghi du lieu can user review/cho phep.
+- Khi test E2E, can verify DB co 2 dong PBF sau submit du input:
+  - `method='FORMULA'`
+  - `method='MODEL_1'`
+- Can verify `/constitution` co `pbfFormula`, `pbfModel` va preference `MODEL_1` lam `pbfSource='MODEL_1'`.
+
+Commit: `Record Model 1 BE final verification`.
