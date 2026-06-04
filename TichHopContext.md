@@ -168,3 +168,52 @@ Trang thai sau checkpoint 5:
 - Chua tich hop/chay Model 1 ML; `MODEL_1` chi moi duoc support o storage/API/selection path.
 - SQL runbook chua duoc chay qua assistant; can review va chay thu cong khi deploy.
 Commit: `Record Model 1 BE verification`.
+
+## Ban giao FE va deploy
+
+Trang thai: da thuc hien, da commit.
+
+### Contract FE can cap nhat
+
+- Submit flat fields moi:
+  - Dung `abdomen` thay cho `waist`.
+  - Them `thigh`.
+  - Cac field con lai giu: `height`, `weight`, `hip`, `neck`, `bust`, `activityFactor`, `age`, `gender`, cac field `*New`.
+- Neu FE gui `baseMetrics[]`:
+  - Dung enum `ABDOMEN` thay cho `WAIST`.
+  - Co the gui them enum `THIGH`.
+- `GET /api/health-data/latest-metrics`:
+  - `baseMetrics` co key `ABDOMEN` va `THIGH` neu da co du lieu.
+  - Khong con key `WAIST` sau khi DB migration xong.
+- `GET /api/health-data/constitution`:
+  - Field cu `pbf` van la PBF active dang dung.
+  - Field moi `pbfFormula`: PBF formula Navy, nullable.
+  - Field moi `pbfModel`: PBF Model 1, nullable.
+  - `pbfSource` la method thuc su duoc dung (`FORMULA` hoac `MODEL_1`), khong phai preference raw neu co fallback.
+- `GET /api/health-data/dashboard-metrics`:
+  - Field cu `pbf` van giu de backward compatible.
+  - Field moi `pbfFormula`: `MetricData`, nullable.
+  - Field moi `pbfModel`: `MetricData`, nullable.
+
+### Thu tu deploy de tranh loi
+
+1. Backup DB `health_db`.
+2. Deploy BE code moi hoac dam bao schema da co cot `calculated_metric_snapshots.method`.
+3. Chay SQL runbook `health-data-service/src/main/resources/db/model1_pbf_migration.sql`.
+4. Verify DB bang cac query cuoi script:
+   - `WAIST` khong con trong `base_metric_values`.
+   - `WAIST` khong con trong `health_indicator_configs`.
+   - User hien huu co config `THIGH` neu can render tu indicator configs.
+   - PBF system-calculated cu co `method = 'FORMULA'`.
+5. Deploy/cap nhat FE contract moi.
+6. Test flow submit `abdomen`/`thigh`, latest metrics, constitution, dashboard.
+
+### Viec con lai cho buoc tich hop ML that
+
+- Tao luong sinh PBF Model 1 va luu snapshot `IndicatorType.PBF` voi `method = "MODEL_1"`.
+- Xac dinh input bat buoc cho Model 1, du kien gom `ABDOMEN` va `THIGH` theo guide.
+- Xac dinh thoi diem trigger model: sau submit base metrics, batch job, hay endpoint rieng.
+- Xac dinh fallback/error khi model service timeout hoac input thieu.
+- Them test cho luong luu `MODEL_1` sau khi co implementation model.
+
+Commit: `Document Model 1 handoff contract`.
