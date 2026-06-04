@@ -217,3 +217,37 @@ Trang thai: da thuc hien, da commit.
 - Them test cho luong luu `MODEL_1` sau khi co implementation model.
 
 Commit: `Document Model 1 handoff contract`.
+
+## Current state for next session
+
+Trang thai: da thuc hien, da commit.
+
+Commits da tao cho phan BE Model 1 prep:
+
+- `f6ac06d Prepare health data inputs for Model 1`
+- `03722b6 Track PBF calculation methods`
+- `9254f8d Test PBF method classification`
+- `e3fc022 Add Model 1 DB migration runbook`
+- `ee416f5 Record Model 1 BE verification`
+- `d83d2f8 Document Model 1 handoff contract`
+
+Verification gan nhat:
+
+- Compile: `.\mvnw.cmd -q -pl health-data-service -am compile` thanh cong.
+- Test: `.\mvnw.cmd -q -pl health-data-service test` thanh cong.
+- Source code chinh/test khong con reference `WAIST|waist`; cac reference con lai chi nam trong context va SQL migration runbook.
+
+Working tree luu y:
+
+- Con cac thay doi `doc/` co san tu truoc, khong thuoc phan BE Model 1 prep va chua duoc commit boi cac checkpoint nay:
+  - `doc/HuongDanXayDungTinhNangNguoiDungXayDungThucDon-BE.md` deleted.
+  - `doc/UserTuDeXuatContext.md` deleted.
+  - `doc/HuongDanNangCapTichHopModel1_Be.md` untracked.
+
+Next action de deploy:
+
+- Review/chay SQL runbook `health-data-service/src/main/resources/db/model1_pbf_migration.sql`.
+- Cap nhat FE theo phan "Ban giao FE va deploy".
+- Sau do moi sang buoc tich hop Model 1 ML that.
+
+Commit: `Record Model 1 prep handoff state`.
