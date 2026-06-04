@@ -354,3 +354,31 @@ Verification:
 
 - Lan dau chay compile trong sandbox fail do Maven bi chan network khi resolve `spring-boot-starter-parent`.
 - Chay lai voi quyen escalated: `.\mvnw.cmd -q -pl health-data-service -am compile` thanh cong.
+
+Commit: `Add Model 1 ML config and DTOs`.
+
+## Step 3 Checkpoint 2 - Model1PbfClient
+
+Trang thai: da thuc hien, cho review, chua commit.
+
+Thay doi:
+
+- Them `org.example.healthdataservice.client.Model1PbfClient`.
+- Client dung `RestClient`.
+- Base URL lay tu `${app.ml.pbf-url}`.
+- Connect/read timeout lay tu `${app.ml.timeout-ms}` qua `SimpleClientHttpRequestFactory`.
+- Method `predictPbf(PbfPredictRequest)`:
+  - POST `/v1/predict/pbf`.
+  - Deserialize `PbfPredictResponse`.
+  - Tra ve `Double pbf`.
+  - Log warning neu response rong.
+
+Pham vi checkpoint nay:
+
+- Chua inject client vao `CalculatedMetricServiceImpl`.
+- Chua luu `MODEL_1`.
+- Chua goi model trong submit flow.
+
+Verification:
+
+- `.\mvnw.cmd -q -pl health-data-service -am compile` thanh cong.
