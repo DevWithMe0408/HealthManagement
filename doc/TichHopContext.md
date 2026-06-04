@@ -329,7 +329,7 @@ Ket luan:
 
 ## Step 3 Checkpoint 1 - Config va DTO ML
 
-Trang thai: da thuc hien, cho review, chua commit.
+Trang thai: da thuc hien, compile thanh cong, da commit.
 
 Thay doi:
 
@@ -355,11 +355,11 @@ Verification:
 - Lan dau chay compile trong sandbox fail do Maven bi chan network khi resolve `spring-boot-starter-parent`.
 - Chay lai voi quyen escalated: `.\mvnw.cmd -q -pl health-data-service -am compile` thanh cong.
 
-Commit: `Add Model 1 ML config and DTOs`.
+Commit: `d8e130b Add Model 1 ML config and DTOs`.
 
 ## Step 3 Checkpoint 2 - Model1PbfClient
 
-Trang thai: da thuc hien, cho review, chua commit.
+Trang thai: da thuc hien, compile thanh cong, da commit.
 
 Thay doi:
 
@@ -383,35 +383,11 @@ Verification:
 
 - `.\mvnw.cmd -q -pl health-data-service -am compile` thanh cong.
 
-Commit: `Add Model 1 PBF prediction service`.
-
-## Step 3 Checkpoint 4 - Trigger Model 1 after submit recalculation
-
-Trang thai: da thuc hien, cho review, chua commit.
-
-Thay doi:
-
-- Cap nhat `HealthDataSubmitServiceImpl`.
-- Sau `calculatedMetricService.recalculateAndSaveDerivedMetrics(userId, changedBaseMetrics)`, goi:
-  - `calculatedMetricService.predictAndSaveModel1Pbf(userId, now)`.
-- Loi tu Model 1 duoc boc `try/catch`:
-  - Log warning.
-  - Khong lam fail `/api/health-data/submit`.
-
-Pham vi checkpoint nay:
-
-- Chi trigger Model 1 khi co base metrics thay doi (`changedBaseMetrics` khong rong), cung dieu kien voi recalc formula.
-- Chua them unit test cho submit fallback.
-
-Verification:
-
-- `.\mvnw.cmd -q -pl health-data-service -am compile` thanh cong.
-
-Commit: `Add Model 1 PBF client`.
+Commit: `ffc4255 Add Model 1 PBF client`.
 
 ## Step 3 Checkpoint 3 - Predict and save MODEL_1 PBF service method
 
-Trang thai: da thuc hien, cho review, chua commit.
+Trang thai: da thuc hien, compile thanh cong, da commit.
 
 Thay doi:
 
@@ -442,3 +418,66 @@ Pham vi checkpoint nay:
 Verification:
 
 - `.\mvnw.cmd -q -pl health-data-service -am compile` thanh cong.
+
+Commit: `8153002 Add Model 1 PBF prediction service`.
+
+## Step 3 Checkpoint 4 - Trigger Model 1 after submit recalculation
+
+Trang thai: da thuc hien, compile thanh cong, da commit.
+
+Thay doi:
+
+- Cap nhat `HealthDataSubmitServiceImpl`.
+- Sau `calculatedMetricService.recalculateAndSaveDerivedMetrics(userId, changedBaseMetrics)`, goi:
+  - `calculatedMetricService.predictAndSaveModel1Pbf(userId, now)`.
+- Loi tu Model 1 duoc boc `try/catch`:
+  - Log warning.
+  - Khong lam fail `/api/health-data/submit`.
+
+Pham vi checkpoint nay:
+
+- Chi trigger Model 1 khi co base metrics thay doi (`changedBaseMetrics` khong rong), cung dieu kien voi recalc formula.
+- Chua them unit test cho submit fallback.
+
+Verification:
+
+- `.\mvnw.cmd -q -pl health-data-service -am compile` thanh cong.
+
+Commit: `aaee652 Add Model 1 PBF after health submit`.
+
+## Step 3 Checkpoint 5 - Unit test luong Model 1 PBF
+
+Trang thai: da thuc hien, test thanh cong, da commit.
+
+Thay doi:
+
+- Them `CalculatedMetricServiceImplTest`.
+- Test case du input:
+  - Mock profile, latest base metrics va `Model1PbfClient`.
+  - Verify request gui sang Model 1 dung mapping:
+    - `Gender.MALE -> sex_m = 1`.
+    - `BUST -> chest`.
+    - `ABDOMEN -> abdomen`.
+    - `THIGH -> thigh`.
+  - Verify snapshot duoc save voi:
+    - `indicatorType = PBF`.
+    - `method = "MODEL_1"`.
+    - `sourceCategory = CALCULATED`.
+- Test case thieu `THIGH`:
+  - Skip goi client.
+  - Khong save snapshot.
+- Test case thieu profile:
+  - Skip doc base metrics, skip goi client.
+  - Khong save snapshot.
+
+Pham vi checkpoint nay:
+
+- Chi them unit test cho `CalculatedMetricServiceImpl.predictAndSaveModel1Pbf(...)`.
+- Chua them test cho fallback trong `HealthDataSubmitServiceImpl`.
+- Chua test E2E voi Python service/DB that.
+
+Verification:
+
+- `.\mvnw.cmd -q -pl health-data-service -Dtest=CalculatedMetricServiceImplTest test` thanh cong.
+
+Commit: `Add Model 1 PBF service tests`.
