@@ -117,3 +117,26 @@ Luu y moi truong test:
 - Khi chay full test, service da ket noi MySQL/RabbitMQ local va co log Eureka connection refused nhung khong lam fail test.
 - Do `ddl-auto=update`, Hibernate da chay `alter table calculated_metric_snapshots add column method varchar(255)` neu DB local chua co cot nay.
 Commit: `Test PBF method classification`.
+
+### Checkpoint 4 - DB migration runbook
+
+Trang thai: da thuc hien, da commit.
+
+Thay doi trong checkpoint nay:
+
+- Them SQL runbook `health-data-service/src/main/resources/db/model1_pbf_migration.sql`.
+- Script nay khong auto-run; dung de review/chay thu cong khi deploy.
+- Script gom:
+  - Them cot `calculated_metric_snapshots.method` neu cot chua ton tai.
+  - Doi du lieu `base_metric_values.indicator_type`: `WAIST` -> `ABDOMEN`.
+  - Doi config `health_indicator_configs.indicator_type`: `WAIST` -> `ABDOMEN`, co xu ly duplicate neu user da co san `ABDOMEN`.
+  - Backfill config `THIGH` cho user hien huu trong `user_for_health_data` neu chua co.
+  - Backfill PBF system-calculated cu thanh `method = 'FORMULA'`.
+  - Cac query verification sau migration.
+
+Luu y:
+
+- Script target MySQL DB `health_db`.
+- Can backup DB truoc khi chay production.
+- Display name trong SQL dang de ASCII (`Vong bung`, `Vong dui`) de tranh loi encoding script; FE chu yeu nen dua vao key `ABDOMEN`/`THIGH` hoac label tu enum/API config sau khi sync.
+Commit: `Add Model 1 DB migration runbook`.
