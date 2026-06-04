@@ -46,13 +46,13 @@ Luu y:
 - `THIGH` la enum moi, khong can migrate du lieu cu trong `base_metric_values`.
 - User cu co the thieu config `THIGH` trong `health_indicator_configs`; can backfill neu FE render input tu endpoint config.
 - Verification: da chay `.\mvnw.cmd -q -pl health-data-service -am compile` thanh cong.
-- Chua git commit. Commit chi thuc hien sau khi user review va xac nhan.
+- Da commit checkpoint nay.
 
 Commit: `f6ac06d Prepare health data inputs for Model 1`.
 
 ### Checkpoint 2 - PBF method va response API
 
-Trang thai: da thuc hien, compile thanh cong, cho review.
+Trang thai: da thuc hien, compile thanh cong, da commit.
 
 Thay doi trong checkpoint nay:
 
@@ -140,3 +140,31 @@ Luu y:
 - Can backup DB truoc khi chay production.
 - Display name trong SQL dang de ASCII (`Vong bung`, `Vong dui`) de tranh loi encoding script; FE chu yeu nen dua vao key `ABDOMEN`/`THIGH` hoac label tu enum/API config sau khi sync.
 Commit: `Add Model 1 DB migration runbook`.
+
+### Checkpoint 5 - Final verification
+
+Trang thai: da thuc hien, verification thanh cong, da commit.
+
+Kiem tra da chay:
+
+- `rg -n "WAIST|waist" health-data-service/src/main/java health-data-service/src/test/java common/src/main/java user-service/src/main/java`
+  - Ket qua: khong con match trong source code chinh/test.
+  - Cac match `WAIST` con lai nam trong `TichHopContext.md` va SQL runbook, dung de mo ta migration/verification.
+- `rg -n "ABDOMEN|THIGH|pbfFormula|pbfModel|getLatestSnapshotByMethod|method = 'FORMULA'|method" ...`
+  - Ket qua: contract moi co mat o enum, submit service, calculation service, classification service, controller, DTO, test, SQL runbook.
+- `.\mvnw.cmd -q -pl health-data-service -am compile`
+  - Ket qua: thanh cong.
+- `.\mvnw.cmd -q -pl health-data-service test`
+  - Ket qua: thanh cong.
+
+Luu y moi truong:
+
+- Full test van khoi dong Spring context that, ket noi MySQL/RabbitMQ local.
+- Eureka connection refused xuat hien trong log do discovery-server local khong chay, nhung khong lam fail test.
+
+Trang thai sau checkpoint 5:
+
+- BE da hoan tat cac thay doi trong guide buoc 1 va buoc 2.
+- Chua tich hop/chay Model 1 ML; `MODEL_1` chi moi duoc support o storage/API/selection path.
+- SQL runbook chua duoc chay qua assistant; can review va chay thu cong khi deploy.
+Commit: `Record Model 1 BE verification`.
