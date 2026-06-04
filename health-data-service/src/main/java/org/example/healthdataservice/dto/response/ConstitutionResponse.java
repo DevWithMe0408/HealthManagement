@@ -16,6 +16,8 @@ public class ConstitutionResponse {
     private String method;
     private Double bmi;
     private Double pbf;
+    private Double pbfFormula;
+    private Double pbfModel;
     private String pbfSource;
     private Integer bmiClass;
     private Integer pbfClass;

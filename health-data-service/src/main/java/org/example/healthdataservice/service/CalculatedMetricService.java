@@ -30,4 +30,6 @@ public interface CalculatedMetricService {
     void recalculateAllDerivedMetricsForUser(String userId);
 
     Optional<CalculatedMetricSnapshot> getLatestSnapshot(String userId, IndicatorType type);
+
+    Optional<CalculatedMetricSnapshot> getLatestSnapshotByMethod(String userId, IndicatorType type, String method);
 }

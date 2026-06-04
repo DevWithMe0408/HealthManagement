@@ -19,6 +19,12 @@ public interface CalculatedMetricSnapshotRepository extends JpaRepository<Calcul
     // Tìm snapshot mới nhất của một loại chỉ số tính toán cho một user
     Optional<CalculatedMetricSnapshot> findTopByUserIdAndIndicatorTypeOrderByCalculatedAtDesc(String userId, IndicatorType indicatorType);
 
+    Optional<CalculatedMetricSnapshot> findTopByUserIdAndIndicatorTypeAndMethodOrderByCalculatedAtDesc(
+            String userId,
+            IndicatorType indicatorType,
+            String method
+    );
+
     // Tìm snapshot mới nhất của một loại chỉ số tính toán cho một user VÀ có nguồn cụ thể
     Optional<CalculatedMetricSnapshot>
     findTopByUserIdAndIndicatorTypeAndSourceCategoryOrderByCalculatedAtDesc(String userId, IndicatorType indicatorType, IndicatorCategory sourceCategory);

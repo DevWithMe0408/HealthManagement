@@ -19,7 +19,8 @@ import java.util.Optional;
 public class BodyClassificationServiceImpl implements BodyClassificationService {
 
     private static final String PBF_METHOD_KEY = "pbf_method";
-    private static final String DEFAULT_PBF_METHOD = "FORMULA";
+    private static final String PBF_METHOD_FORMULA = "FORMULA";
+    private static final String PBF_METHOD_MODEL_1 = "MODEL_1";
 
     private final CalculatedMetricService calculatedMetricService;
     private final UserProfileMirrorService userProfileMirrorService;
@@ -35,16 +36,32 @@ public class BodyClassificationServiceImpl implements BodyClassificationService 
                 .orElseThrow(() -> new BusinessException(ErrorCode.HEALTH_MISSING_BASIC_DATA));
         Double bmi = bmiSnapshot.getValue();
 
-        Double pbf = calculatedMetricService
-                .getLatestSnapshot(userId, IndicatorType.PBF)
-                .map(CalculatedMetricSnapshot::getValue)
-                .orElse(null);
-
-        String pbfMethod = userPreferenceMirrorService.getValueOrDefault(
+        String requestedPbfMethod = normalizePbfMethod(userPreferenceMirrorService.getValueOrDefault(
                 userId,
                 PBF_METHOD_KEY,
-                DEFAULT_PBF_METHOD
-        );
+                PBF_METHOD_FORMULA
+        ));
+
+        Optional<CalculatedMetricSnapshot> pbfFormulaSnapshot = calculatedMetricService
+                .getLatestSnapshotByMethod(userId, IndicatorType.PBF, PBF_METHOD_FORMULA);
+        Optional<CalculatedMetricSnapshot> pbfModelSnapshot = calculatedMetricService
+                .getLatestSnapshotByMethod(userId, IndicatorType.PBF, PBF_METHOD_MODEL_1);
+
+        Optional<CalculatedMetricSnapshot> activePbfSnapshot = PBF_METHOD_MODEL_1.equals(requestedPbfMethod)
+                ? pbfModelSnapshot
+                : pbfFormulaSnapshot;
+        String activePbfMethod = requestedPbfMethod;
+        String warning = null;
+
+        if (PBF_METHOD_MODEL_1.equals(requestedPbfMethod) && activePbfSnapshot.isEmpty() && pbfFormulaSnapshot.isPresent()) {
+            activePbfSnapshot = pbfFormulaSnapshot;
+            activePbfMethod = PBF_METHOD_FORMULA;
+            warning = "Model AI chua san sang, dung cong thuc Navy";
+        }
+
+        Double pbf = activePbfSnapshot.map(CalculatedMetricSnapshot::getValue).orElse(null);
+        Double pbfFormula = pbfFormulaSnapshot.map(CalculatedMetricSnapshot::getValue).orElse(null);
+        Double pbfModel = pbfModelSnapshot.map(CalculatedMetricSnapshot::getValue).orElse(null);
 
         Integer bmiClass = bodyClassifier.classifyByBmi(bmi);
         Integer pbfClass = bodyClassifier.classifyByPbf(pbf, gender);
@@ -55,14 +72,23 @@ public class BodyClassificationServiceImpl implements BodyClassificationService 
                 .method("RULE_BMI_PBF")
                 .bmi(bmi)
                 .pbf(pbf)
-                .pbfSource(pbfMethod)
+                .pbfFormula(pbfFormula)
+                .pbfModel(pbfModel)
+                .pbfSource(pbf == null ? null : activePbfMethod)
                 .bmiClass(bmiClass)
                 .pbfClass(pbfClass)
                 .finalClass(finalClass)
                 .suggestedGoal(suggestGoalForConstitution(finalClass))
-                .warning(pbf == null ? buildMissingPbfWarning(gender) : null)
+                .warning(warning != null ? warning : (pbf == null ? buildMissingPbfWarning(gender) : null))
                 .computedAt(LocalDateTime.now())
                 .build();
+    }
+
+    private String normalizePbfMethod(String pbfMethod) {
+        if (PBF_METHOD_MODEL_1.equals(pbfMethod)) {
+            return PBF_METHOD_MODEL_1;
+        }
+        return PBF_METHOD_FORMULA;
     }
 
     private Gender getRequiredGender(String userId) {
@@ -75,9 +101,9 @@ public class BodyClassificationServiceImpl implements BodyClassificationService 
 
     private String buildMissingPbfWarning(Gender gender) {
         if (gender == Gender.FEMALE) {
-            return "Thieu vong eo, co, hoac hong - chi phan loai theo BMI";
+            return "Thieu vong bung, co, hoac hong - chi phan loai theo BMI";
         }
-        return "Thieu vong eo hoac co - chi phan loai theo BMI";
+        return "Thieu vong bung hoac co - chi phan loai theo BMI";
     }
 
     private String suggestGoalForConstitution(Integer finalClass) {

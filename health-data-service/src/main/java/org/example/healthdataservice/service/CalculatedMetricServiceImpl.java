@@ -29,6 +29,7 @@ import java.util.stream.Stream;
 public class CalculatedMetricServiceImpl implements CalculatedMetricService {
 
     private static final Logger log = LoggerFactory.getLogger(CalculatedMetricServiceImpl.class);
+    private static final String PBF_METHOD_FORMULA = "FORMULA";
 
     private final CalculatedMetricSnapshotRepository snapshotRepository;
     private final BaseMetricService baseMetricService;
@@ -114,14 +115,14 @@ public class CalculatedMetricServiceImpl implements CalculatedMetricService {
         // Tính toán BMI
         if (affects(IndicatorType.BMI, changedBaseMetrics) || isFullRecalculation(changedBaseMetrics)) {
             Double bmi = healthCalculator.calculateBMI(height, weight);
-            saveSystemCalculatedMetric(userId, IndicatorType.BMI, bmi, now);
+            saveSystemCalculatedMetric(userId, IndicatorType.BMI, bmi, now, null);
         }
         // Tính toán BMR
         // BMR bị ảnh hưởng bởi height, weight, age, gender.
         // Nếu profile (age/gender) thay đổi (trigger recalculateAll) HOẶC height/weight thay đổi.
         if (affects(IndicatorType.BMR, changedBaseMetrics) || isFullRecalculation(changedBaseMetrics)) {// Thêm điều kiện nếu age/gender thay đổi
             Double bmr = healthCalculator.calculateBMR(genderString, weight, height, age);
-            saveSystemCalculatedMetric(userId, IndicatorType.BMR, bmr, now);
+            saveSystemCalculatedMetric(userId, IndicatorType.BMR, bmr, now, null);
         }
 
         // Tính toán TDEE
@@ -129,19 +130,19 @@ public class CalculatedMetricServiceImpl implements CalculatedMetricService {
             // TDEE cần BMR, nên tính BMR trước hoặc lấy BMR đã tính
             Double bmrForTdee = healthCalculator.calculateBMR(genderString, weight, height, age);
             Double tdee = healthCalculator.calculateTDEE(activityFactor, bmrForTdee);
-            saveSystemCalculatedMetric(userId, IndicatorType.TDEE, tdee, now);
+            saveSystemCalculatedMetric(userId, IndicatorType.TDEE, tdee, now, null);
         }
 
         // Tính toán PBF
         if (affects(IndicatorType.PBF, changedBaseMetrics) || isFullRecalculation(changedBaseMetrics)) {
             Double pbf = healthCalculator.calculatePBF(genderString, abdomen, hip, neck, height, age);
-            saveSystemCalculatedMetric(userId, IndicatorType.PBF, pbf, now);
+            saveSystemCalculatedMetric(userId, IndicatorType.PBF, pbf, now, PBF_METHOD_FORMULA);
         }
 
         // Tính toán WHR
         if (affects(IndicatorType.WHR, changedBaseMetrics) || isFullRecalculation(changedBaseMetrics)) {
             Double whr = healthCalculator.calculateWHR(abdomen, hip);
-            saveSystemCalculatedMetric(userId, IndicatorType.WHR, whr, now);
+            saveSystemCalculatedMetric(userId, IndicatorType.WHR, whr, now, null);
         }
 
     }
@@ -157,7 +158,7 @@ public class CalculatedMetricServiceImpl implements CalculatedMetricService {
         recalculateAndSaveDerivedMetrics(userId, allRelevantBaseMetrics);
     }
 
-    private void saveSystemCalculatedMetric(String userId, IndicatorType type, Double value, LocalDateTime calculatedAt) {
+    private void saveSystemCalculatedMetric(String userId, IndicatorType type, Double value, LocalDateTime calculatedAt, String method) {
         if (value == null) {
             log.debug("Calculated value for {} is null for userId {}. Skipping save.", type, userId);
             return;
@@ -176,6 +177,7 @@ public class CalculatedMetricServiceImpl implements CalculatedMetricService {
         snapshot.setUnit(unit);
         snapshot.setCalculatedAt(calculatedAt);
         snapshot.setSourceCategory(IndicatorCategory.CALCULATED); // Đánh dấu nguồn là hệ thống tính
+        snapshot.setMethod(method);
         snapshotRepository.save(snapshot);
         log.info("Saved system-calculated metric {} (value: {}) for userId {}.", type, value, userId);
 
@@ -218,5 +220,13 @@ public class CalculatedMetricServiceImpl implements CalculatedMetricService {
         }
         // Ưu tiên lấy bản ghi do người dùng cung cấp nếu nó mới hơn, hoặc chỉ lấy bản ghi mới nhất bất kể nguồn
         return snapshotRepository.findTopByUserIdAndIndicatorTypeOrderByCalculatedAtDesc(userId, type);
+    }
+
+    @Override
+    public Optional<CalculatedMetricSnapshot> getLatestSnapshotByMethod(String userId, IndicatorType type, String method) {
+        if (!type.isCalculatedMetric() && type.getCategory() != IndicatorCategory.USER_PROVIDED_CALCULATED) {
+            log.warn("Attempted to get snapshot by method for non-calculated/non-user-provided-calculated type: {} for userId {}", type, userId);
+        }
+        return snapshotRepository.findTopByUserIdAndIndicatorTypeAndMethodOrderByCalculatedAtDesc(userId, type, method);
     }
 }

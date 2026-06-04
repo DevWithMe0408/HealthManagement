@@ -13,7 +13,7 @@ File nay ghi lai cac thay doi BE de session khac va FE nam duoc contract moi.
 
 ### Checkpoint 1 - Input schema va metric base
 
-Trang thai: da thuc hien, compile thanh cong, cho review.
+Trang thai: da thuc hien, compile thanh cong, da commit.
 
 Thay doi trong checkpoint nay:
 
@@ -47,3 +47,49 @@ Luu y:
 - User cu co the thieu config `THIGH` trong `health_indicator_configs`; can backfill neu FE render input tu endpoint config.
 - Verification: da chay `.\mvnw.cmd -q -pl health-data-service -am compile` thanh cong.
 - Chua git commit. Commit chi thuc hien sau khi user review va xac nhan.
+
+Commit: `f6ac06d Prepare health data inputs for Model 1`.
+
+### Checkpoint 2 - PBF method va response API
+
+Trang thai: da thuc hien, compile thanh cong, cho review.
+
+Thay doi trong checkpoint nay:
+
+- `CalculatedMetricSnapshot`: them cot/entity field `method`.
+- `CalculatedMetricSnapshotRepository`: them query latest snapshot theo `userId`, `indicatorType`, `method`.
+- `CalculatedMetricService`: them `getLatestSnapshotByMethod(...)`.
+- `CalculatedMetricServiceImpl`: PBF do cong thuc Navy luu `method = "FORMULA"`; BMI/BMR/TDEE/WHR luu `method = null`.
+- `BodyClassificationServiceImpl`: doc preference `pbf_method`, lay dung PBF theo method; neu preference la `MODEL_1` nhung chua co snapshot model thi fallback sang `FORMULA` va tra warning.
+- `ConstitutionResponse`: them `pbfFormula`, `pbfModel`; giu `pbf` la gia tri active dang dung.
+- `DashboardMetricsResponse`: them `pbfFormula`, `pbfModel`; giu `pbf` cu de backward compatible.
+- `HealthDataController /dashboard-metrics`: fetch PBF theo `FORMULA` va `MODEL_1` de set hai field moi.
+
+API contract sau checkpoint nay:
+
+- `GET /api/health-data/constitution` tra them:
+  - `pbfFormula`: PBF Navy formula, nullable.
+  - `pbfModel`: PBF Model 1, nullable.
+  - `pbf`: gia tri PBF active theo preference/fallback.
+  - `pbfSource`: method thuc su duoc dung, `FORMULA` hoac `MODEL_1`; null neu khong co PBF.
+- `GET /api/health-data/dashboard-metrics` tra them:
+  - `pbfFormula`: `MetricData`, nullable.
+  - `pbfModel`: `MetricData`, nullable.
+- Giai doan chua co model: `pbfModel` du kien null; neu user chon `MODEL_1` thi constitution fallback sang `FORMULA` khi co formula.
+
+DB migration/backfill can chay:
+
+```sql
+UPDATE calculated_metric_snapshots
+SET method = 'FORMULA'
+WHERE indicator_type = 'PBF'
+  AND method IS NULL
+  AND source_category = 'CALCULATED';
+```
+
+Luu y:
+
+- `ddl-auto=update` co the tu them cot `method`, nhung backfill du lieu cu van can SQL.
+- PBF do user nhap (`source_category = 'USER_PROVIDED_CALCULATED'`) hien de `method = null`, khong duoc coi la `FORMULA` hay `MODEL_1`.
+- Verification: da chay `.\mvnw.cmd -q -pl health-data-service -am compile` thanh cong.
+Commit: `Track PBF calculation methods`.

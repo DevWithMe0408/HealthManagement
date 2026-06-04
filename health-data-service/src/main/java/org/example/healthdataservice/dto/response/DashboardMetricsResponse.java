@@ -13,6 +13,8 @@ public class DashboardMetricsResponse {
     private MetricData bmr;
     private MetricData tdee;
     private MetricData pbf;
+    private MetricData pbfFormula;
+    private MetricData pbfModel;
     private MetricData whr;
     // Thêm các chỉ số khác nếu muốn hiển thị trên dashboard
 }

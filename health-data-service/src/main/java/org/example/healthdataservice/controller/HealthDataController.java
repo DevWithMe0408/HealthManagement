@@ -132,6 +132,12 @@ public class HealthDataController {
         Optional<CalculatedMetricSnapshot> pbfOpt = calculatedMetricService.getLatestSnapshot(userId, IndicatorType.PBF);
         pbfOpt.ifPresent(cms -> response.setPbf(new MetricData(cms.getValue(), cms.getUnit() != null ? cms.getUnit().getCode() : null, cms.getCalculatedAt())));
 
+        Optional<CalculatedMetricSnapshot> pbfFormulaOpt = calculatedMetricService.getLatestSnapshotByMethod(userId, IndicatorType.PBF, "FORMULA");
+        pbfFormulaOpt.ifPresent(cms -> response.setPbfFormula(new MetricData(cms.getValue(), cms.getUnit() != null ? cms.getUnit().getCode() : null, cms.getCalculatedAt())));
+
+        Optional<CalculatedMetricSnapshot> pbfModelOpt = calculatedMetricService.getLatestSnapshotByMethod(userId, IndicatorType.PBF, "MODEL_1");
+        pbfModelOpt.ifPresent(cms -> response.setPbfModel(new MetricData(cms.getValue(), cms.getUnit() != null ? cms.getUnit().getCode() : null, cms.getCalculatedAt())));
+
         Optional<CalculatedMetricSnapshot> whrOpt = calculatedMetricService.getLatestSnapshot(userId, IndicatorType.WHR);
         whrOpt.ifPresent(cms -> response.setWhr(new MetricData(cms.getValue(), cms.getUnit() != null ? cms.getUnit().getCode() : null, cms.getCalculatedAt())));
 
