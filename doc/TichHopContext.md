@@ -622,3 +622,68 @@ Invoke-RestMethod -Method Post -Uri http://localhost:8085/api/health-data/submit
 ```
 
 Commit: `Record Model 1 E2E readiness`.
+
+## Step 3 Checkpoint 9 - Read-only DB readiness cho E2E
+
+Trang thai: da thuc hien read-only DB check, da commit.
+
+Kiem tra da thuc hien:
+
+- `mysql` CLI khong co trong PATH.
+- Da dung `jshell` + MySQL JDBC driver trong Maven cache de query read-only vao:
+  - `jdbc:mysql://localhost:3306/health_db`
+  - user `health_user`
+- Khong chay bat ky `INSERT`, `UPDATE`, `DELETE`, hay submit API nao trong checkpoint nay.
+
+Ket qua schema:
+
+- Cac cot `indicator_type` da la `VARCHAR(500)`, khong con native MySQL enum:
+  - `base_metric_values.indicator_type = varchar(500)`.
+  - `calculated_metric_snapshots.indicator_type = varchar(500)`.
+  - `health_indicator_configs.indicator_type = varchar(500)`.
+- Ket luan: loi `Data truncated for column 'indicator_type'` do enum cu da duoc xu ly tren DB local hien tai.
+
+Ket qua du lieu base/config:
+
+- `base_metric_values`:
+  - `ABDOMEN`: 68 rows.
+  - `THIGH`: 1 row.
+  - `WAIST`: 0 rows trong query scope.
+- `health_indicator_configs`:
+  - `ABDOMEN`: 24 rows.
+  - `THIGH`: 1 row.
+  - `WAIST`: 0 rows trong query scope.
+
+Candidate user co du input Model 1:
+
+- `019e91be-fe50-7ea8-8709-aa6a8a4490ba`
+  - Profile: `gender=MALE`, `birth_data=2003-01-07`.
+  - Co du latest base metric types bat buoc:
+    - `WEIGHT`, `HEIGHT`, `NECK`, `BUST`, `ABDOMEN`, `HIP`, `THIGH`.
+  - `THIGH` hien co value `49.0`, recorded_at `2026-06-04 15:52:57.872620`.
+
+Canh bao du lieu cu:
+
+- `calculated_metric_snapshots` van con PBF system-calculated cu voi `method=NULL`:
+  - `method=NULL`, `source_category=CALCULATED`: 74 rows.
+  - `method=FORMULA`, `source_category=CALCULATED`: 2 rows.
+- Dieu nay khong chan submit moi, vi code moi se luu PBF formula voi `method="FORMULA"`.
+- Tuy nhien, neu FE/API can doc PBF formula cu qua `getLatestSnapshotByMethod(..., "FORMULA")`, nen chay backfill:
+
+```sql
+UPDATE calculated_metric_snapshots
+SET method = 'FORMULA'
+WHERE indicator_type = 'PBF'
+  AND method IS NULL
+  AND source_category = 'CALCULATED';
+```
+
+Trang thai E2E sau checkpoint nay:
+
+- Python service san sang.
+- DB schema local san sang cho `ABDOMEN`/`THIGH`.
+- Co san mot user candidate du input de test Model 1.
+- Health-data-service van can duoc chay tren port `8085` truoc khi goi API E2E.
+- Bước submit E2E tiep theo se ghi them/cap nhat du lieu trong `base_metric_values` va `calculated_metric_snapshots`, nen can user review/cho phep truoc khi thuc hien.
+
+Commit: `Record Model 1 DB E2E readiness`.
