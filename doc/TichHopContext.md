@@ -383,6 +383,30 @@ Verification:
 
 - `.\mvnw.cmd -q -pl health-data-service -am compile` thanh cong.
 
+Commit: `Add Model 1 PBF prediction service`.
+
+## Step 3 Checkpoint 4 - Trigger Model 1 after submit recalculation
+
+Trang thai: da thuc hien, cho review, chua commit.
+
+Thay doi:
+
+- Cap nhat `HealthDataSubmitServiceImpl`.
+- Sau `calculatedMetricService.recalculateAndSaveDerivedMetrics(userId, changedBaseMetrics)`, goi:
+  - `calculatedMetricService.predictAndSaveModel1Pbf(userId, now)`.
+- Loi tu Model 1 duoc boc `try/catch`:
+  - Log warning.
+  - Khong lam fail `/api/health-data/submit`.
+
+Pham vi checkpoint nay:
+
+- Chi trigger Model 1 khi co base metrics thay doi (`changedBaseMetrics` khong rong), cung dieu kien voi recalc formula.
+- Chua them unit test cho submit fallback.
+
+Verification:
+
+- `.\mvnw.cmd -q -pl health-data-service -am compile` thanh cong.
+
 Commit: `Add Model 1 PBF client`.
 
 ## Step 3 Checkpoint 3 - Predict and save MODEL_1 PBF service method

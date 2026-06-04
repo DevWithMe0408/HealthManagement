@@ -69,6 +69,11 @@ public class HealthDataSubmitServiceImpl implements HealthDataSubmitService {
             log.info("Base metrics changed for userId: {}. Types: {}. Triggering recalculation of derived metrics.",
                     userId, changedBaseMetrics);
              calculatedMetricService.recalculateAndSaveDerivedMetrics(userId, changedBaseMetrics);
+             try {
+                 calculatedMetricService.predictAndSaveModel1Pbf(userId, now);
+             } catch (Exception e) {
+                 log.warn("Model 1 PBF skipped for userId {}: {}", userId, e.getMessage());
+             }
         } else {
             log.info("No base metrics changed for userId: {}. Skipping recalculation.", userId);
         }
