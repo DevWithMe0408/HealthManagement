@@ -93,3 +93,27 @@ Luu y:
 - PBF do user nhap (`source_category = 'USER_PROVIDED_CALCULATED'`) hien de `method = null`, khong duoc coi la `FORMULA` hay `MODEL_1`.
 - Verification: da chay `.\mvnw.cmd -q -pl health-data-service -am compile` thanh cong.
 Commit: `Track PBF calculation methods`.
+
+### Checkpoint 3 - Test PBF method behavior
+
+Trang thai: da thuc hien, test thanh cong, da commit.
+
+Thay doi trong checkpoint nay:
+
+- Them unit test `BodyClassificationServiceImplTest`.
+- Test cac case:
+  - Preference `FORMULA` thi `constitution.pbf` dung PBF formula, du `pbfModel` co ton tai.
+  - Preference `MODEL_1` va co snapshot model thi `constitution.pbf` dung PBF model.
+  - Preference `MODEL_1` nhung chua co snapshot model thi fallback sang `FORMULA` va tra warning `"Model AI chua san sang, dung cong thuc Navy"`.
+
+Verification:
+
+- Da chay `.\mvnw.cmd -q -pl health-data-service -Dtest=BodyClassificationServiceImplTest test` thanh cong.
+- Da chay `.\mvnw.cmd -q -pl health-data-service test` thanh cong.
+
+Luu y moi truong test:
+
+- Test context hien co `HealthDataServiceApplicationTests` khoi dong Spring context that.
+- Khi chay full test, service da ket noi MySQL/RabbitMQ local va co log Eureka connection refused nhung khong lam fail test.
+- Do `ddl-auto=update`, Hibernate da chay `alter table calculated_metric_snapshots add column method varchar(255)` neu DB local chua co cot nay.
+Commit: `Test PBF method classification`.
