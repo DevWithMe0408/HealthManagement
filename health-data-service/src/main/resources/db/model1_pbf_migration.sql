@@ -23,6 +23,23 @@ PREPARE add_method_column_stmt FROM @add_method_column_sql;
 EXECUTE add_method_column_stmt;
 DEALLOCATE PREPARE add_method_column_stmt;
 
+ALTER TABLE health_indicator_configs
+    MODIFY indicator_type VARCHAR(500) NOT NULL;
+
+ALTER TABLE base_metric_values
+    MODIFY indicator_type VARCHAR(500) NOT NULL;
+
+ALTER TABLE calculated_metric_snapshots
+    MODIFY indicator_type VARCHAR(500) NOT NULL;
+
+UPDATE base_metric_values
+SET indicator_type = 'ABDOMEN'
+WHERE indicator_type = 'WAIST';
+
+UPDATE health_indicator_configs
+SET indicator_type = 'ABDOMEN'
+WHERE indicator_type = 'WAIST';
+
 -- 2. Rename WAIST data to ABDOMEN for base metric values.
 UPDATE base_metric_values
 SET indicator_type = 'ABDOMEN'

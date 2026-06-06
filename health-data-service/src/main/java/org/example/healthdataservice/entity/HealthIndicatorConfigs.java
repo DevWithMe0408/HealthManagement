@@ -25,7 +25,7 @@ public class HealthIndicatorConfigs {
     private String userId;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "indicator_type", nullable = false,length = 500)
+    @Column(name = "indicator_type", nullable = false, length = 500, columnDefinition = "VARCHAR(500)")
     private IndicatorType indicatorType; // Ví dụ: BMI, WHR, PBF,...
 
     @Column(name = "display_name")

@@ -22,7 +22,7 @@ public class CalculatedMetricSnapshot {
     private String userId;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "indicator_type", nullable = false)
+    @Column(name = "indicator_type", nullable = false, length = 500, columnDefinition = "VARCHAR(500)")
     private IndicatorType indicatorType;
 
     @Column(nullable = false)
