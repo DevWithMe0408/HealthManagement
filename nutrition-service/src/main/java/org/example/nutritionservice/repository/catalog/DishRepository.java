@@ -13,6 +13,13 @@ public interface DishRepository extends JpaRepository<Dish, String> {
 
     List<Dish> findBySlotCodeAndIsActiveTrue(SlotCode slotCode);
 
+    // Dem mon dang active cho thong ke dashboard admin
+    long countByIsActiveTrue();
+
+    // Dem so mon active theo tung slot cho bieu do do phu kho mon
+    @Query("SELECT d.slotCode, COUNT(d) FROM Dish d WHERE d.isActive = TRUE GROUP BY d.slotCode")
+    List<Object[]> countActiveBySlot();
+
     @Query("""
             SELECT d FROM Dish d
             WHERE d.slotCode = :slotCode

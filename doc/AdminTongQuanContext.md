@@ -115,6 +115,8 @@ Ghi chu:
 - 2026-06-07: Da danh gia kha thi. Compile baseline cac module lien quan thanh cong sau khi cho phep Maven tai dependency.
 - 2026-06-07: Da chot khong dung `profileCompleted`; dung `birthDate IS NOT NULL AND gender IS NOT NULL`.
 - 2026-06-07: Tao file context nay.
+- 2026-06-07: Da tao `IngredientRepository` va bo sung cac method thong ke trong `DishRepository`.
+- 2026-06-07: Compile `common,nutrition-service` thanh cong sau buoc repository.
 
 ## Luu y cho FE
 
