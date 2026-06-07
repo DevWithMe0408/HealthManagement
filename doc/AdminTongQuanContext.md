@@ -119,6 +119,8 @@ Ghi chu:
 - 2026-06-07: Compile `common,nutrition-service` thanh cong sau buoc repository.
 - 2026-06-07: Da tao `CatalogStatsResponse`, `DashboardStatsService`, va `AdminDashboardController` cho endpoint catalog-stats.
 - 2026-06-07: Compile `common,nutrition-service` thanh cong sau buoc catalog-stats.
+- 2026-06-07: Da tao `UserStatsResponse`, bo sung `UserRepository.countWithProfile()`, va them endpoint `/api/admin/users/stats`.
+- 2026-06-07: Compile `common,user-service` thanh cong sau buoc user-stats.
 
 ## Luu y cho FE
 

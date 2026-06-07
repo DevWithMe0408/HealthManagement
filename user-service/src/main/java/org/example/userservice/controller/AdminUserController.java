@@ -3,6 +3,7 @@ package org.example.userservice.controller;
 import lombok.RequiredArgsConstructor;
 import org.example.userservice.dto.response.AdminUserDetailResponse;
 import org.example.userservice.dto.response.AdminUserListItemResponse;
+import org.example.userservice.dto.response.UserStatsResponse;
 import org.example.userservice.entity.Auth;
 import org.example.userservice.entity.User;
 import org.example.userservice.enums.Role;
@@ -57,6 +58,14 @@ public class AdminUserController {
                 .map(this::toListItem);
 
         return DataResponse.success(result);
+    }
+
+    @GetMapping("/stats")
+    public DataResponse<UserStatsResponse> getUserStats() {
+        return DataResponse.success(UserStatsResponse.builder()
+                .totalUsers(userRepository.count())
+                .usersWithProfile(userRepository.countWithProfile())
+                .build());
     }
 
     @GetMapping("/{userId}")

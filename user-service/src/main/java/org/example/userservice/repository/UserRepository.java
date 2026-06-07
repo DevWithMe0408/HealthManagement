@@ -18,6 +18,10 @@ public interface UserRepository extends JpaRepository<User, String> {
 
     Optional<User> findByAuth_Username(String username);
 
+    // Dem user da co du thong tin ho so toi thieu, giong logic man Admin danh sach
+    @Query("SELECT COUNT(u) FROM User u WHERE u.birthDate IS NOT NULL AND u.gender IS NOT NULL")
+    long countWithProfile();
+
     @Query("""
         SELECT u FROM User u
         WHERE (:search IS NULL OR :search = ''
