@@ -75,6 +75,14 @@ spring:
             - name: JwtFilter
               args: { }
 
+        - id: admin-dashboard
+          uri: lb://nutrition-service
+          predicates:
+            - Path=/api/admin/dashboard/**
+          filters:
+            - name: JwtFilter
+              args: { }
+
 
 jwt:
   secret: U29tZVZlcnlTZWN1cmVLZXlUaGF0SXNHZW5lcmF0ZWRTdHJvbmdMb3JtYXQcmVLZXlUaGF0SXNHZW5lcmF0=

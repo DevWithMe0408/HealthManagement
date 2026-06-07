@@ -121,6 +121,8 @@ Ghi chu:
 - 2026-06-07: Compile `common,nutrition-service` thanh cong sau buoc catalog-stats.
 - 2026-06-07: Da tao `UserStatsResponse`, bo sung `UserRepository.countWithProfile()`, va them endpoint `/api/admin/users/stats`.
 - 2026-06-07: Compile `common,user-service` thanh cong sau buoc user-stats.
+- 2026-06-07: Da them gateway route `admin-dashboard` cho `/api/admin/dashboard/**` ve `lb://nutrition-service` kem `JwtFilter`.
+- 2026-06-07: Compile `api-gateway` thanh cong sau buoc gateway route.
 
 ## Luu y cho FE
 
