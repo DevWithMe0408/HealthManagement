@@ -117,6 +117,8 @@ Ghi chu:
 - 2026-06-07: Tao file context nay.
 - 2026-06-07: Da tao `IngredientRepository` va bo sung cac method thong ke trong `DishRepository`.
 - 2026-06-07: Compile `common,nutrition-service` thanh cong sau buoc repository.
+- 2026-06-07: Da tao `CatalogStatsResponse`, `DashboardStatsService`, va `AdminDashboardController` cho endpoint catalog-stats.
+- 2026-06-07: Compile `common,nutrition-service` thanh cong sau buoc catalog-stats.
 
 ## Luu y cho FE
 
