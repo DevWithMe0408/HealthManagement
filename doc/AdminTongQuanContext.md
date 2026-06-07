@@ -123,6 +123,7 @@ Ghi chu:
 - 2026-06-07: Compile `common,user-service` thanh cong sau buoc user-stats.
 - 2026-06-07: Da them gateway route `admin-dashboard` cho `/api/admin/dashboard/**` ve `lb://nutrition-service` kem `JwtFilter`.
 - 2026-06-07: Compile `api-gateway` thanh cong sau buoc gateway route.
+- 2026-06-07: Compile tong hop `common,nutrition-service,user-service,api-gateway` thanh cong sau toan bo thay doi BE.
 
 ## Luu y cho FE
 
