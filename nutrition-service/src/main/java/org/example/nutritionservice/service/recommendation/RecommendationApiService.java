@@ -759,7 +759,7 @@ public class RecommendationApiService {
             return warning("WARNING", "OBESE_MAINTAIN_WEIGHT", "Can nhac muc tieu duy tri can nang.", true);
         }
         if ("BEO_PHI".equals(constitution) && "TANG".equals(goalCode)) {
-            return warning("STRONG_WARNING", "OBESE_BUT_GAIN_WEIGHT", "Khuyen nghi doi muc tieu truoc khi tang can.", true);
+            return warning("STRONG_WARNING", "OBESE_BUT_GAIN_WEIGHT", "Khuyến nghị đổi mục tiêu trước khi tăng cân.", true);
         }
         return null;
     }
