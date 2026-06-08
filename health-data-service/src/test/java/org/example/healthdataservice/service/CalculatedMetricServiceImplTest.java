@@ -83,7 +83,7 @@ class CalculatedMetricServiceImplTest {
         assertThat(request.getSexM()).isEqualTo(1);
         assertThat(request.getAge()).isEqualTo(30.0);
         assertThat(request.getWeight()).isEqualTo(70.0);
-        assertThat(request.getHeight()).isEqualTo(175.0);
+        assertThat(request.getHeight()).isEqualTo(1.75);
         assertThat(request.getNeck()).isEqualTo(38.0);
         assertThat(request.getChest()).isEqualTo(95.0);
         assertThat(request.getAbdomen()).isEqualTo(84.0);
