@@ -115,7 +115,7 @@ Validation dung `COMMON-001`.
 | 5. Tao controller admin | Da xong | `AdminDishController` |
 | 6. Them gateway route | Da xong | `/api/admin/dishes/**` -> `nutrition-service` |
 | 7. Build verify | Da xong | Maven compile PASS |
-| 8. Commit va push | Dang thuc hien | Da commit, dang push branch |
+| 8. Commit va push | Da xong | Da push branch `AdminTongQuanPage` |
 
 ## Nhat Ky
 
@@ -133,4 +133,5 @@ Validation dung `COMMON-001`.
 - Lan build dau bi chan do sandbox khong co quyen tai dependency Maven Central. Sau khi chay lai voi quyen network, compile PASS.
 - Buoc 8 bat dau publish: may hien tai khong co GitHub CLI (`gh`), nen khong tao PR tu local duoc. Se commit va push bang `git`.
 - Working tree co thay doi ngoai pham vi tai `doc/HuongDanCRUDMonAn_BE.md` va `doc/HuongDanPageTongQuanAdmin_BE.md`; cac file nay khong nam trong commit CRUD admin mon an.
-- Da tao commit `feat(nutrition): add admin dish CRUD` tren branch `AdminTongQuanPage`.
+- Da tao commit `d90fa48` voi message `feat(nutrition): add admin dish CRUD` tren branch `AdminTongQuanPage`.
+- Da push branch `AdminTongQuanPage` len `origin` va set upstream `origin/AdminTongQuanPage`.
