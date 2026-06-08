@@ -73,7 +73,6 @@ public class HealthDataSubmitServiceImpl implements HealthDataSubmitService {
                  calculatedMetricService.predictAndSaveModel1Pbf(userId, now);
              } catch (Exception e) {
                  log.warn("Model 1 PBF skipped for userId {}: {}", userId, e.getMessage());
-                 throw e;
              }
         } else {
             log.info("No base metrics changed for userId: {}. Skipping recalculation.", userId);

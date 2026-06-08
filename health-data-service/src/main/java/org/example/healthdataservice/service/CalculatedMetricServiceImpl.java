@@ -213,7 +213,7 @@ public class CalculatedMetricServiceImpl implements CalculatedMetricService {
                 .sexM(profile.getGender() == Gender.MALE ? 1 : 0)
                 .age(age)
                 .weight(weight)
-                .height(height / 100.0)
+                .height(height)
                 .neck(neck)
                 .chest(chest)
                 .abdomen(abdomen)
