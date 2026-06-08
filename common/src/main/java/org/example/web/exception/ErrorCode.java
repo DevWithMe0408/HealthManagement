@@ -30,6 +30,10 @@ public enum ErrorCode {
     CONFIG_VALIDATION_FAILED("CONFIG-002", HttpStatus.BAD_REQUEST, "Cau hinh khong hop le"),
     CONFIG_SUM_INVALID      ("CONFIG-003", HttpStatus.BAD_REQUEST, "Tong gia tri phai bang gia tri mong doi"),
 
+    // ===== CATALOG module =====
+    DISH_NOT_FOUND          ("CATALOG-001", HttpStatus.NOT_FOUND,   "Mon an khong ton tai"),
+    DISH_NAME_TAKEN         ("CATALOG-002", HttpStatus.CONFLICT,    "Ten mon da ton tai"),
+
     // ===== USER SETTINGS / GOALS =====
     PREFERENCE_INVALID_KEY  ("PREF-001", HttpStatus.BAD_REQUEST, "Key preference khong duoc ho tro"),
     PREFERENCE_INVALID_VALUE("PREF-002", HttpStatus.BAD_REQUEST, "Gia tri preference khong hop le"),
