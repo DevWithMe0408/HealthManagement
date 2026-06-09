@@ -44,11 +44,11 @@ public enum ErrorCode {
     // ===== HEALTH DATA / DASHBOARD =====
     HEALTH_MISSING_BASIC_DATA("HEALTH-001", HttpStatus.UNPROCESSABLE_ENTITY, "Can chieu cao va can nang de xac dinh the trang"),
     HEALTH_MISSING_GENDER   ("HEALTH-002", HttpStatus.UNPROCESSABLE_ENTITY, "Can gioi tinh de xac dinh the trang"),
-    HEALTH_INVALID_METRIC   ("HEALTH-003", HttpStatus.BAD_REQUEST, "Chi so suc khoe khong hop le"),
+    HEALTH_INVALID_METRIC   ("HEALTH-003", HttpStatus.BAD_REQUEST, "Chỉ số sức khỏe không hợp lệ"),
 
     // ===== COMMON =====
-    VALIDATION_FAILED       ("COMMON-001", HttpStatus.BAD_REQUEST,           "Du lieu khong hop le"),
-    INTERNAL_SERVER_ERROR   ("COMMON-002", HttpStatus.INTERNAL_SERVER_ERROR, "Loi he thong");
+    VALIDATION_FAILED       ("COMMON-001", HttpStatus.BAD_REQUEST,           "Dữ liệu không hợp lệ"),
+    INTERNAL_SERVER_ERROR   ("COMMON-002", HttpStatus.INTERNAL_SERVER_ERROR, "Lỗi hệ thống");
 
     private final String code;
     private final HttpStatus httpStatus;

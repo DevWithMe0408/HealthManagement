@@ -280,11 +280,14 @@ public class BruteForceEngine {
             int topK,
             PriorityQueue<MealCombination> topCombinations,
             Map<Integer, BigDecimal> fixedServingByIndex) {
+
+        // Điều kiện dừng -> Tất cả các món đã có khẩu phần
         if (dishIndex == dishCombo.size()) {
             scoreServingCombination(current, mealTarget, configs, penalty, topK, topCombinations);
             return;
         }
 
+        // Cắt tỉa các nhánh không khả thi
         if (dishIndex > 0 && shouldPrune(current, dishCombo, dishIndex, mealTarget, configs, fixedServingByIndex)) {
             if (log.isDebugEnabled()) {
                 log.debug("Pruned serving branch mealType={} dishIndex={}", mealTarget.getMealType(), dishIndex);
@@ -293,6 +296,7 @@ public class BruteForceEngine {
         }
 
         DishCandidate candidate = dishCombo.get(dishIndex);
+        // Xử lí khẩu phần cố định
         if (fixedServingByIndex != null && fixedServingByIndex.containsKey(dishIndex)) {
             DishWithServing dishWithServing = withServing(
                     candidate,
@@ -314,6 +318,7 @@ public class BruteForceEngine {
             return;
         }
 
+        // Thử tất cả khẩu phần cho món không cố định
         for (BigDecimal serving : servingSteps(candidate.getSlotCode(), configs)) {
             DishWithServing dishWithServing = withServing(candidate, serving);
             if (violatesWeightConstraint(dishWithServing, configs)) {
@@ -335,6 +340,7 @@ public class BruteForceEngine {
         }
     }
 
+    // Kiểm tra xem có cắt tỉa được nhánh hiện tại k
     private boolean shouldPrune(
             List<DishWithServing> current,
             List<DishCandidate> dishCombo,
@@ -342,6 +348,7 @@ public class BruteForceEngine {
             MealTarget mealTarget,
             LoadedConfigs configs,
             Map<Integer, BigDecimal> fixedServingByIndex) {
+        // 1. Tính tổng kcal đã chọn đến hiện tại -> cộng tổng kcal của ất cả các món đã thêm vào current
         BigDecimal kcalSoFar = current.stream()
                 .map(DishWithServing::getKcal)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
