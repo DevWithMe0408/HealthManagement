@@ -82,11 +82,11 @@ public interface CalculatedMetricSnapshotRepository extends JpaRepository<Calcul
                                               @Param("toDatePlusOneDay") LocalDateTime toDatePlusOneDay);
 
     // Query để lấy tất cả bản ghi (raw data) nếu granularity là NONE
-    @Query("SELECT NEW org.example.healthdataservice.dto.HistoricalDataPointDTO(cms.recordedAt, cms.value, u.code) " +
-            "FROM BaseMetricValue cms LEFT JOIN cms.unit u " +
+    @Query("SELECT NEW org.example.healthdataservice.dto.HistoricalDataPointDTO(cms.calculatedAt, cms.value, u.code) " +
+            "FROM CalculatedMetricSnapshot cms LEFT JOIN cms.unit u " +
             "WHERE cms.userId = :userId AND cms.indicatorType = :indicatorType " +
-            "  AND cms.recordedAt >= :fromDate AND cms.recordedAt < :toDatePlusOneDay " +
-            "ORDER BY cms.recordedAt ASC")
+            "  AND cms.calculatedAt >= :fromDate AND cms.calculatedAt < :toDatePlusOneDay " +
+            "ORDER BY cms.calculatedAt ASC")
     List<HistoricalDataPointDTO> findAllCalculatedMetricsInDateRange(@Param("userId") String userId,
                                                                @Param("indicatorType") IndicatorType indicatorType, // JPQL có thể dùng ENUM
                                                                @Param("fromDate") LocalDateTime fromDate,
