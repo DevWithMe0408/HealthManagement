@@ -348,7 +348,8 @@ public class BruteForceEngine {
             MealTarget mealTarget,
             LoadedConfigs configs,
             Map<Integer, BigDecimal> fixedServingByIndex) {
-        // 1. Tính tổng kcal đã chọn đến hiện tại -> cộng tổng kcal của ất cả các món đã thêm vào current
+
+        // 1. Tính tổng kcal đã chọn đến hiện tại -> cộng tổng kcal của tất cả các món đã thêm vào current
         BigDecimal kcalSoFar = current.stream()
                 .map(DishWithServing::getKcal)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
