@@ -91,6 +91,9 @@ public class MealLog {
     @Builder.Default
     private MealStatus status = MealStatus.SUGGESTED;
 
+    @Column(name = "custom_note", length = 500)
+    private String customNote;
+
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;

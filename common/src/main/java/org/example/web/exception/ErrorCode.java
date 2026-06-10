@@ -33,6 +33,7 @@ public enum ErrorCode {
     // ===== CATALOG module =====
     DISH_NOT_FOUND          ("CATALOG-001", HttpStatus.NOT_FOUND,   "Mon an khong ton tai"),
     DISH_NAME_TAKEN         ("CATALOG-002", HttpStatus.CONFLICT,    "Ten mon da ton tai"),
+    MEAL_LOG_NOT_FOUND      ("MEALLOG-001", HttpStatus.NOT_FOUND,   "Khong tim thay ban ghi bua an"),
 
     // ===== USER SETTINGS / GOALS =====
     PREFERENCE_INVALID_KEY  ("PREF-001", HttpStatus.BAD_REQUEST, "Key preference khong duoc ho tro"),

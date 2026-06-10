@@ -29,5 +29,6 @@ public class MealLogHistoryResponse {
     private BigDecimal totalCarb;
     private BigDecimal finalScore;
     private MealStatus status;
+    private String customNote;
     private List<DishSuggestionResponse> dishes;
 }
