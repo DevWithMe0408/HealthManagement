@@ -26,4 +26,5 @@ public class UserContext {
     private Map<MealType, PerMealConfig> perMealConfigs;
     private LocalDateTime requestTime;
     private boolean forceCompute;
+    private String planDay;
 }

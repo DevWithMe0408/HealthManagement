@@ -219,6 +219,11 @@ public class RecommendationOrchestrator {
 
     private PlanWindow determineRemainingMeals(UserContext userCtx, LoadedConfigs configs) {
         LocalDateTime requestTime = requestTime(userCtx);
+
+        if ("TOMORROW".equalsIgnoreCase(userCtx.getPlanDay())) {
+            return new PlanWindow(requestTime.toLocalDate().plusDays(1), orderedMealTypes(configs));
+        }
+
         if (requestTime.getHour() >= 21 || requestTime.getHour() < 5) {
             return new PlanWindow(requestTime.toLocalDate().plusDays(1), orderedMealTypes(configs));
         }

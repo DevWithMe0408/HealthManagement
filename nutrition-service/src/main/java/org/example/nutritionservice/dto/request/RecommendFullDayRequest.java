@@ -49,6 +49,9 @@ public class RecommendFullDayRequest {
     @Builder.Default
     private boolean forceCompute = false;
 
+    @Pattern(regexp = "TODAY|TOMORROW")
+    private String planDay;
+
     @Data
     @NoArgsConstructor
     @AllArgsConstructor

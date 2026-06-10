@@ -83,8 +83,11 @@ public class RecommendationApiService {
         validateFullDayRequest(request);
         DailyPlanResponse.WarningResponse warning = warningFor(request.getConstitution(), request.getGoalCode());
         if (warning != null && warning.isRequireConfirm() && !request.isConstitutionConfirmed()) {
+            LocalDate planDate = "TOMORROW".equalsIgnoreCase(request.getPlanDay())
+                    ? LocalDate.now().plusDays(1)
+                    : LocalDate.now();
             return DailyPlanResponse.builder()
-                    .planDate(LocalDate.now())
+                    .planDate(planDate)
                     .goalCode(request.getGoalCode())
                     .planType(request.getPlanType())
                     .warning(warning)
@@ -100,6 +103,7 @@ public class RecommendationApiService {
                 .perMealConfigs(toPerMealConfigs(request))
                 .requestTime(LocalDateTime.now())
                 .forceCompute(request.isForceCompute())
+                .planDay(request.getPlanDay())
                 .build();
         DailyPlan dailyPlan = recommendationOrchestrator.recommendFullDay(userContext);
         return toDailyPlanResponse(

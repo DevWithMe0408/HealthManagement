@@ -7,6 +7,7 @@ import org.example.nutritionservice.entity.meallog.MealType;
 import org.junit.jupiter.api.Test;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -47,6 +48,28 @@ class RecommendationApiServiceTest {
 
         assertEquals("OBESE_BUT_GAIN_WEIGHT", response.getWarning().getCode());
         assertTrue(response.getWarning().isRequireConfirm());
+        assertTrue(response.getMeals().isEmpty());
+    }
+
+    @Test
+    void warningOnlyResponseUsesTomorrowPlanDateWhenRequested() {
+        RecommendFullDayRequest request = RecommendFullDayRequest.builder()
+                .tdee(new BigDecimal("2000"))
+                .goalCode("TANG")
+                .planType("3_BUA")
+                .constitution("BEO_PHI")
+                .constitutionConfirmed(false)
+                .perMealConfig(Map.of(
+                        MealType.SANG, combo(),
+                        MealType.TRUA, multiDish(),
+                        MealType.TOI, multiDish()
+                ))
+                .planDay("TOMORROW")
+                .build();
+
+        DailyPlanResponse response = recommendationApiService.recommendFullDay("user-1", request);
+
+        assertEquals(LocalDate.now().plusDays(1), response.getPlanDate());
         assertTrue(response.getMeals().isEmpty());
     }
 
