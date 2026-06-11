@@ -26,6 +26,7 @@ class RecommendationApiServiceTest {
             null,
             null,
             null,
+            null,
             null
     );
 

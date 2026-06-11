@@ -3,6 +3,7 @@ package org.example.nutritionservice.controller;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.example.nutritionservice.dto.request.ConfirmMealRequest;
+import org.example.nutritionservice.dto.request.DayPlanRequest;
 import org.example.nutritionservice.dto.request.RecommendFullDayRequest;
 import org.example.nutritionservice.dto.request.SwapDishRequest;
 import org.example.nutritionservice.dto.request.UpdateMealStatusRequest;
@@ -46,6 +47,14 @@ public class RecommendationController {
             @RequestHeader(value = "userId", required = false) String legacyUserId,
             @RequestBody @Valid RecommendFullDayRequest request) {
         return DataResponse.success(recommendationApiService.recommendFullDay(resolveUserId(userId, legacyUserId), request));
+    }
+
+    @PostMapping("/api/recommendation/day-plan")
+    public DataResponse<DailyPlanResponse> dayPlan(
+            @RequestHeader(value = "X-User-Id", required = false) String userId,
+            @RequestHeader(value = "userId", required = false) String legacyUserId,
+            @RequestBody @Valid DayPlanRequest request) {
+        return DataResponse.success(recommendationApiService.buildDayPlan(resolveUserId(userId, legacyUserId), request));
     }
 
     @PostMapping("/api/recommendation/swap-dish")

@@ -40,4 +40,8 @@ public class MealSuggestionResponse {
     private MealCombinationResponse topCombination;
 
     private Map<String, List<@Valid DishOptionResponse>> slotAlternatives;
+
+    private String status;
+
+    private String mealLogId;
 }

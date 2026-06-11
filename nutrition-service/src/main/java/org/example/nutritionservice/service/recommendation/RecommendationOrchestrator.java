@@ -104,7 +104,7 @@ public class RecommendationOrchestrator {
         );
     }
 
-    private RecommendedMeal recommendForMeal(
+    RecommendedMeal recommendForMeal(
             UserContext userCtx,
             MealType mealType,
             LocalDate targetDate,
@@ -130,7 +130,7 @@ public class RecommendationOrchestrator {
                 .build();
     }
 
-    private MealTarget buildMealTarget(
+    MealTarget buildMealTarget(
             UserContext userCtx,
             MealType mealType,
             LocalDate targetDate,
@@ -157,7 +157,7 @@ public class RecommendationOrchestrator {
                 .build();
     }
 
-    private Map<SlotCode, List<org.example.nutritionservice.domain.recommendation.DishCandidate>> loadCandidates(
+    Map<SlotCode, List<org.example.nutritionservice.domain.recommendation.DishCandidate>> loadCandidates(
             MealTarget mealTarget,
             LoadedConfigs configs) {
         Map<SlotCode, List<org.example.nutritionservice.domain.recommendation.DishCandidate>> candidates =
@@ -199,7 +199,7 @@ public class RecommendationOrchestrator {
                 .build();
     }
 
-    private List<HistoryEntry> toHistory(LocalDate mealDate, MealCombination combination) {
+    List<HistoryEntry> toHistory(LocalDate mealDate, MealCombination combination) {
         return combination.getDishes().stream()
                 .map(DishWithServing::getCandidate)
                 .map(candidate -> HistoryEntry.builder()
@@ -251,7 +251,7 @@ public class RecommendationOrchestrator {
         return EnumSet.of(MealType.TOI);
     }
 
-    private List<MealType> orderedMealTypes(LoadedConfigs configs) {
+    List<MealType> orderedMealTypes(LoadedConfigs configs) {
         return configs.getMealRatios().stream()
                 .sorted(Comparator.comparing(item -> item.getSortOrder()))
                 .map(item -> MealType.valueOf(item.getMealCode()))

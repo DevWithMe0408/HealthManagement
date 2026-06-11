@@ -15,6 +15,8 @@ import org.example.nutritionservice.domain.recommendation.PerMealConfig;
 import org.example.nutritionservice.domain.recommendation.RecommendedMeal;
 import org.example.nutritionservice.domain.recommendation.SlotAlternative;
 import org.example.nutritionservice.domain.recommendation.UserContext;
+import org.example.nutritionservice.dto.request.ConfirmMealRequest;
+import org.example.nutritionservice.dto.request.DayPlanRequest;
 import org.example.nutritionservice.dto.request.PinnedDish;
 import org.example.nutritionservice.dto.request.RecommendFullDayRequest;
 import org.example.nutritionservice.dto.request.SwapDishRequest;
@@ -30,11 +32,13 @@ import org.example.nutritionservice.entity.catalog.SlotCode;
 import org.example.nutritionservice.entity.favorite.FavoriteDish;
 import org.example.nutritionservice.entity.meallog.MealLog;
 import org.example.nutritionservice.entity.meallog.MealLogDish;
+import org.example.nutritionservice.entity.meallog.MealStatus;
 import org.example.nutritionservice.entity.meallog.MealType;
 import org.example.nutritionservice.repository.catalog.DishRepository;
 import org.example.nutritionservice.repository.favorite.FavoriteDishRepository;
 import org.example.nutritionservice.repository.meallog.MealLogDishRepository;
 import org.example.nutritionservice.repository.meallog.MealLogRepository;
+import org.example.nutritionservice.service.meallog.MealLogService;
 import org.example.web.exception.BusinessException;
 import org.example.web.exception.ErrorCode;
 import org.springframework.stereotype.Service;
@@ -45,6 +49,7 @@ import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.EnumMap;
 import java.util.EnumSet;
 import java.util.HashMap;
@@ -78,6 +83,7 @@ public class RecommendationApiService {
     private final DishRepository dishRepository;
     private final MealLogRepository mealLogRepository;
     private final MealLogDishRepository mealLogDishRepository;
+    private final MealLogService mealLogService;
 
     public DailyPlanResponse recommendFullDay(String userId, RecommendFullDayRequest request) {
         validateFullDayRequest(request);
@@ -115,6 +121,103 @@ public class RecommendationApiService {
         );
     }
 
+    @Transactional
+    public DailyPlanResponse buildDayPlan(String userId, DayPlanRequest request) {
+        validateDayPlanRequest(request);
+        DailyPlanResponse.WarningResponse warning = warningFor(request.getConstitution(), request.getGoalCode());
+        LocalDate targetDate = targetDateOf(request.getPlanDay());
+        if (warning != null && warning.isRequireConfirm() && !request.isConstitutionConfirmed()) {
+            return DailyPlanResponse.builder()
+                    .planDate(targetDate)
+                    .goalCode(request.getGoalCode())
+                    .planType(request.getPlanType())
+                    .warning(warning)
+                    .meals(List.of())
+                    .build();
+        }
+
+        LoadedConfigs configs = configLoaderService.loadForRecommendation(
+                request.getGoalCode(),
+                request.getPlanType()
+        );
+        UserContext userContext = UserContext.builder()
+                .userId(userId)
+                .tdee(request.getTdee())
+                .goalCode(request.getGoalCode())
+                .planType(request.getPlanType())
+                .perMealConfigs(toPerMealConfigs(request))
+                .requestTime(LocalDateTime.now())
+                .forceCompute(request.isForceCompute())
+                .planDay(request.getPlanDay())
+                .build();
+
+        List<MealType> mealTypes = recommendationOrchestrator.orderedMealTypes(configs);
+        Map<MealType, MealLog> existingByType = mealLogRepository.findByUserIdAndMealDate(userId, targetDate)
+                .stream()
+                .collect(Collectors.toMap(MealLog::getMealType, mealLog -> mealLog));
+        Map<String, List<MealLogDish>> dishesByLogId = loadDishesByLogId(existingByType.values().stream().toList());
+        Set<String> favorites = favoriteIds(userId);
+        List<HistoryEntry> history = new ArrayList<>(loadHistory(userId, targetDate, configs));
+        List<RecommendedMeal> meals = new ArrayList<>();
+
+        for (MealType mealType : mealTypes) {
+            MealLog existing = existingByType.get(mealType);
+            boolean regenerateThis = existing == null
+                    || (request.isForceRegenerate() && !isReported(existing.getStatus()));
+
+            RecommendedMeal meal;
+            if (existing != null && !regenerateThis) {
+                meal = reconstructMeal(
+                        userContext,
+                        existing,
+                        dishesByLogId.getOrDefault(existing.getId(), List.of()),
+                        configs
+                );
+                meal.setStatus(existing.getStatus());
+                meal.setMealLogId(existing.getId());
+            } else {
+                meal = recommendationOrchestrator.recommendForMeal(
+                        userContext,
+                        mealType,
+                        targetDate,
+                        history,
+                        favorites,
+                        configs
+                );
+                MealLog saved = persistMeal(
+                        userId,
+                        targetDate,
+                        mealType,
+                        request.getPlanType(),
+                        request.getGoalCode(),
+                        meal
+                );
+                meal.setStatus(saved.getStatus());
+                meal.setMealLogId(saved.getId());
+                meal.getCombinations().stream()
+                        .findFirst()
+                        .ifPresent(combination -> history.addAll(recommendationOrchestrator.toHistory(
+                                targetDate,
+                                combination
+                        )));
+            }
+            meals.add(meal);
+        }
+
+        DailyPlan dailyPlan = DailyPlan.builder()
+                .planDate(targetDate)
+                .meals(meals)
+                .build();
+        return toDailyPlanResponse(
+                dailyPlan,
+                request.getGoalCode(),
+                request.getPlanType(),
+                warning,
+                favorites
+        );
+    }
+
+    @Transactional
     public SwapResultResponse swapDish(String userId, SwapDishRequest request) {
         MealSuggestionResponse currentMeal = findMeal(request.getCurrentPlan(), request.getMealType());
         if (currentMeal.getTopCombination() == null) {
@@ -219,6 +322,16 @@ public class RecommendationApiService {
                                 LinkedHashMap::new
                         )))
                 .build();
+        MealLog saved = mealLogService.confirmMeal(userId, ConfirmMealRequest.builder()
+                .mealDate(request.getCurrentPlan().getPlanDate())
+                .mealType(currentMeal.getMealType())
+                .planType(request.getCurrentPlan().getPlanType())
+                .goalCode(request.getCurrentPlan().getGoalCode())
+                .mealKcalTarget(updatedMeal.getMealKcalTarget())
+                .selectedCombination(updatedCombination)
+                .build());
+        updatedMeal.setStatus(saved.getStatus().name());
+        updatedMeal.setMealLogId(saved.getId());
         return SwapResultResponse.builder()
                 .updatedMeal(updatedMeal)
                 .newFinalScore(updatedCombination.getFinalScore())
@@ -268,6 +381,8 @@ public class RecommendationApiService {
                     .carbTarget(macroTarget.getCarbG())
                     .topCombination(null)
                     .slotAlternatives(Map.of())
+                    .status(meal.getStatus() == null ? null : meal.getStatus().name())
+                    .mealLogId(meal.getMealLogId())
                     .build();
         }
 
@@ -297,6 +412,8 @@ public class RecommendationApiService {
                 .carbTarget(macroTarget.getCarbG())
                 .topCombination(toCombinationResponse(topCombination, favorites))
                 .slotAlternatives(slotAlternatives)
+                .status(meal.getStatus() == null ? null : meal.getStatus().name())
+                .mealLogId(meal.getMealLogId())
                 .build();
     }
 
@@ -354,6 +471,176 @@ public class RecommendationApiService {
                 .baseServingG(alternative.getCandidate().getDish().getBaseServingG())
                 .favorite(favorites.contains(alternative.getDishId()))
                 .build();
+    }
+
+    private LocalDate targetDateOf(String planDay) {
+        return "TOMORROW".equalsIgnoreCase(planDay) ? LocalDate.now().plusDays(1) : LocalDate.now();
+    }
+
+    private Map<String, List<MealLogDish>> loadDishesByLogId(List<MealLog> mealLogs) {
+        if (mealLogs.isEmpty()) {
+            return Map.of();
+        }
+        return mealLogDishRepository.findByMealLogIdIn(mealLogs.stream()
+                        .map(MealLog::getId)
+                        .toList())
+                .stream()
+                .collect(Collectors.groupingBy(MealLogDish::getMealLogId));
+    }
+
+    private boolean isReported(MealStatus status) {
+        return status != null && status != MealStatus.SUGGESTED;
+    }
+
+    private RecommendedMeal reconstructMeal(
+            UserContext userContext,
+            MealLog mealLog,
+            List<MealLogDish> mealLogDishes,
+            LoadedConfigs configs) {
+        if (mealLogDishes.isEmpty()) {
+            throw invalid("Meal log " + mealLog.getId() + " khong co mon an de dung lai");
+        }
+
+        List<MealLogDish> orderedDishes = mealLogDishes.stream()
+                .sorted(Comparator.comparing(MealLogDish::getSortOrder))
+                .toList();
+        Map<String, Dish> dishMap = loadDishMapByIds(orderedDishes.stream()
+                .map(MealLogDish::getDishId)
+                .collect(Collectors.toSet()));
+        List<DishCandidate> pinnedCandidates = orderedDishes.stream()
+                .map(dish -> {
+                    Dish catalogDish = dishMap.get(dish.getDishId());
+                    if (catalogDish == null) {
+                        throw invalid("Mon trong meal_log khong ton tai: " + dish.getDishId());
+                    }
+                    return dishFilterService.toCandidate(catalogDish);
+                })
+                .toList();
+        Map<Integer, BigDecimal> fixedActualGramsByIndex = new HashMap<>();
+        for (int index = 0; index < orderedDishes.size(); index++) {
+            fixedActualGramsByIndex.put(index, orderedDishes.get(index).getActualGrams());
+        }
+
+        MealTarget mealTarget = buildStoredMealTarget(userContext, mealLog, configs);
+        MealCombination combination = bruteForceEngine.findBestServingCombo(
+                pinnedCandidates,
+                fixedActualGramsByIndex,
+                mealTarget,
+                configs,
+                BigDecimal.ZERO
+        );
+        if (combination == null) {
+            combination = rebuildStoredCombination(pinnedCandidates, orderedDishes, mealLog);
+        }
+        combination.setActual(storedActual(mealLog));
+        combination.setFinalScore(mealLog.getFinalScore());
+        if (combination.getMacroScore() == null) {
+            combination.setMacroScore(mealLog.getFinalScore());
+        }
+        if (combination.getPenalty() == null) {
+            combination.setPenalty(BigDecimal.ZERO);
+        }
+
+        return RecommendedMeal.builder()
+                .mealTarget(mealTarget)
+                .candidatesPerSlot(recommendationOrchestrator.loadCandidates(mealTarget, configs))
+                .combinations(List.of(combination))
+                .build();
+    }
+
+    private MealTarget buildStoredMealTarget(UserContext userContext, MealLog mealLog, LoadedConfigs configs) {
+        PerMealConfig perMealConfig = userContext.getPerMealConfigs().get(mealLog.getMealType());
+        if (perMealConfig == null) {
+            throw invalid("Thieu cau hinh mon cho bua " + mealLog.getMealType());
+        }
+        MacroTarget macroTarget = macroCalculator.calculateMacroTarget(
+                mealLog.getMealKcalTarget(),
+                configs.getGoalConfig()
+        );
+        return MealTarget.builder()
+                .mealDate(mealLog.getMealDate())
+                .mealType(mealLog.getMealType())
+                .mealKcal(mealLog.getMealKcalTarget())
+                .macroTarget(macroTarget)
+                .slotKcalTargets(macroCalculator.calculateSlotKcalTargets(
+                        mealLog.getMealKcalTarget(),
+                        configs.getGoalConfig(),
+                        perMealConfig
+                ))
+                .perMealConfig(perMealConfig)
+                .build();
+    }
+
+    private MealCombination rebuildStoredCombination(
+            List<DishCandidate> candidates,
+            List<MealLogDish> storedDishes,
+            MealLog mealLog) {
+        List<DishWithServing> dishes = new ArrayList<>();
+        for (int index = 0; index < candidates.size(); index++) {
+            DishCandidate candidate = candidates.get(index);
+            MealLogDish storedDish = storedDishes.get(index);
+            BigDecimal servingMultiplier = storedDish.getServingMultiplier();
+            dishes.add(DishWithServing.builder()
+                    .candidate(candidate)
+                    .servingMultiplier(servingMultiplier)
+                    .actualGrams(storedDish.getActualGrams())
+                    .kcal(storedDish.getDishKcal())
+                    .proteinG(candidate.getBaseProteinG().multiply(servingMultiplier).setScale(CALC_SCALE, RoundingMode.HALF_UP))
+                    .fatG(candidate.getBaseFatG().multiply(servingMultiplier).setScale(CALC_SCALE, RoundingMode.HALF_UP))
+                    .carbG(candidate.getBaseCarbG().multiply(servingMultiplier).setScale(CALC_SCALE, RoundingMode.HALF_UP))
+                    .build());
+        }
+        return MealCombination.builder()
+                .dishes(dishes)
+                .actual(storedActual(mealLog))
+                .macroScore(mealLog.getFinalScore())
+                .penalty(BigDecimal.ZERO)
+                .finalScore(mealLog.getFinalScore())
+                .build();
+    }
+
+    private MealActual storedActual(MealLog mealLog) {
+        return MealActual.builder()
+                .kcal(mealLog.getTotalKcalActual())
+                .proteinG(mealLog.getTotalProteinG())
+                .fatG(mealLog.getTotalFatG())
+                .carbG(mealLog.getTotalCarbG())
+                .build();
+    }
+
+    private MealLog persistMeal(
+            String userId,
+            LocalDate targetDate,
+            MealType mealType,
+            String planType,
+            String goalCode,
+            RecommendedMeal meal) {
+        MealCombination combination = topCombinationOrThrow(meal);
+        ConfirmMealRequest persistRequest = ConfirmMealRequest.builder()
+                .mealDate(targetDate)
+                .mealType(mealType)
+                .planType(planType)
+                .goalCode(goalCode)
+                .mealKcalTarget(meal.getMealTarget().getMealKcal())
+                .selectedCombination(toCombinationResponse(combination, Set.of()))
+                .build();
+        return mealLogService.confirmMeal(userId, persistRequest);
+    }
+
+    private MealCombination topCombinationOrThrow(RecommendedMeal meal) {
+        return meal.getCombinations().stream()
+                .findFirst()
+                .orElseThrow(() -> invalid("Khong tim duoc thuc don de luu cho bua "
+                        + meal.getMealTarget().getMealType()));
+    }
+
+    private Map<String, Dish> loadDishMapByIds(Set<String> dishIds) {
+        if (dishIds.isEmpty()) {
+            return Map.of();
+        }
+        Map<String, Dish> dishMap = new HashMap<>();
+        dishRepository.findAllById(dishIds).forEach(dish -> dishMap.put(dish.getId(), dish));
+        return dishMap;
     }
 
     private Map<String, String> buildPinnedMap(List<DishSuggestionResponse> currentDishes, SwapDishRequest request) {
@@ -715,8 +1002,17 @@ public class RecommendationApiService {
     }
 
     private Map<MealType, PerMealConfig> toPerMealConfigs(RecommendFullDayRequest request) {
+        return toPerMealConfigs(request.getPerMealConfig());
+    }
+
+    private Map<MealType, PerMealConfig> toPerMealConfigs(DayPlanRequest request) {
+        return toPerMealConfigs(request.getPerMealConfig());
+    }
+
+    private Map<MealType, PerMealConfig> toPerMealConfigs(
+            Map<MealType, RecommendFullDayRequest.PerMealConfigRequest> perMealConfig) {
         Map<MealType, PerMealConfig> configs = new EnumMap<>(MealType.class);
-        request.getPerMealConfig().forEach((mealType, item) -> configs.put(mealType, PerMealConfig.builder()
+        perMealConfig.forEach((mealType, item) -> configs.put(mealType, PerMealConfig.builder()
                 .mealKind(item.getMealKind())
                 .nMain(item.getNMain())
                 .nRau(item.getNRau())
@@ -726,13 +1022,23 @@ public class RecommendationApiService {
     }
 
     private void validateFullDayRequest(RecommendFullDayRequest request) {
-        Set<MealType> expectedMeals = "3_BUA".equals(request.getPlanType())
+        validateMealConfig(request.getPlanType(), request.getPerMealConfig());
+    }
+
+    private void validateDayPlanRequest(DayPlanRequest request) {
+        validateMealConfig(request.getPlanType(), request.getPerMealConfig());
+    }
+
+    private void validateMealConfig(
+            String planType,
+            Map<MealType, RecommendFullDayRequest.PerMealConfigRequest> perMealConfig) {
+        Set<MealType> expectedMeals = "3_BUA".equals(planType)
                 ? EnumSet.of(MealType.SANG, MealType.TRUA, MealType.TOI)
                 : EnumSet.allOf(MealType.class);
-        if (!request.getPerMealConfig().keySet().equals(expectedMeals)) {
-            throw invalid("perMealConfig khong khop planType " + request.getPlanType());
+        if (!perMealConfig.keySet().equals(expectedMeals)) {
+            throw invalid("perMealConfig khong khop planType " + planType);
         }
-        request.getPerMealConfig().forEach((mealType, config) -> {
+        perMealConfig.forEach((mealType, config) -> {
             if (config.getMealKind() == null) {
                 throw invalid("mealKind la bat buoc cho " + mealType);
             }
