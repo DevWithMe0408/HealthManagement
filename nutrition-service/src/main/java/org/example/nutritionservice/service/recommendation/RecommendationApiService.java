@@ -123,9 +123,13 @@ public class RecommendationApiService {
 
     @Transactional
     public DailyPlanResponse buildDayPlan(String userId, DayPlanRequest request) {
+        // 1. Validate request
         validateDayPlanRequest(request);
+        // 2. Cảnh báo theo thể trạng và mục tiêu
         DailyPlanResponse.WarningResponse warning = warningFor(request.getConstitution(), request.getGoalCode());
-        LocalDate targetDate = targetDateOf(request.getPlanDay());
+
+        LocalDate targetDate = targetDateOf(request.getPlanDay()); // ngày tạo plan
+        // 3. Kiểm tra warning
         if (warning != null && warning.isRequireConfirm() && !request.isConstitutionConfirmed()) {
             return DailyPlanResponse.builder()
                     .planDate(targetDate)
@@ -136,6 +140,7 @@ public class RecommendationApiService {
                     .build();
         }
 
+        // 4. Load cấu hình
         LoadedConfigs configs = configLoaderService.loadForRecommendation(
                 request.getGoalCode(),
                 request.getPlanType()
@@ -151,22 +156,32 @@ public class RecommendationApiService {
                 .planDay(request.getPlanDay())
                 .build();
 
+        // 5. Lấy danh sách loại bữa ăn theo thứ tự
         List<MealType> mealTypes = recommendationOrchestrator.orderedMealTypes(configs);
+
+        // 6. Lấy meal log đã tồn tại trong ngày
         Map<MealType, MealLog> existingByType = mealLogRepository.findByUserIdAndMealDate(userId, targetDate)
                 .stream()
                 .collect(Collectors.toMap(MealLog::getMealType, mealLog -> mealLog));
+
+        // 7. Load danh sách món theo meal log
         Map<String, List<MealLogDish>> dishesByLogId = loadDishesByLogId(existingByType.values().stream().toList());
+        // 8. Load danh sách món yêu thích
         Set<String> favorites = favoriteIds(userId);
+        // 9. Load lịch sử ăn uống
         List<HistoryEntry> history = new ArrayList<>(loadHistory(userId, targetDate, configs));
         List<RecommendedMeal> meals = new ArrayList<>();
 
-        for (MealType mealType : mealTypes) {
+        for (MealType mealType : mealTypes) { // Lặp qua từng loại bữa ăn
+            // Kiểm tra meal đã tồn tại và có cần regenerate không ?
             MealLog existing = existingByType.get(mealType);
             boolean regenerateThis = existing == null
                     || (request.isForceRegenerate() && !isReported(existing.getStatus()));
+            // TH1: chưa có meal log -> generate mới
+            // TH2: User yêu cầu regenerate và meal chưa reported
 
             RecommendedMeal meal;
-            if (existing != null && !regenerateThis) {
+            if (existing != null && !regenerateThis) { // Nếu đã có meal và không cần regenerate thì reconstruct
                 meal = reconstructMeal(
                         userContext,
                         existing,
@@ -175,7 +190,7 @@ public class RecommendationApiService {
                 );
                 meal.setStatus(existing.getStatus());
                 meal.setMealLogId(existing.getId());
-            } else {
+            } else { // Nếu chưa có
                 meal = recommendationOrchestrator.recommendForMeal(
                         userContext,
                         mealType,
@@ -184,6 +199,7 @@ public class RecommendationApiService {
                         favorites,
                         configs
                 );
+                // Lưu meal vào db
                 MealLog saved = persistMeal(
                         userId,
                         targetDate,
