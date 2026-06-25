@@ -104,6 +104,7 @@ public class RecommendationOrchestrator {
         );
     }
 
+    // de xuat cho mot bua cu the
     RecommendedMeal recommendForMeal(
             UserContext userCtx,
             MealType mealType,
@@ -130,6 +131,7 @@ public class RecommendationOrchestrator {
                 .build();
     }
 
+    // xay dung muc tieu dinh duong cua bua
     MealTarget buildMealTarget(
             UserContext userCtx,
             MealType mealType,
@@ -157,6 +159,7 @@ public class RecommendationOrchestrator {
                 .build();
     }
 
+    // Lay danh sach mon ung vien cho tung vi tri mon
     Map<SlotCode, List<org.example.nutritionservice.domain.recommendation.DishCandidate>> loadCandidates(
             MealTarget mealTarget,
             LoadedConfigs configs) {

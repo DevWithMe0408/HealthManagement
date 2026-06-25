@@ -35,6 +35,7 @@ import java.util.Set;
 public class BruteForceEngine {
     /**
      * Sinh tổ hợp + serving grid + sort top K
+     * tim to hop tot nhat
      */
 
     private static final long MAX_WORK_UNITS = 50_000_000L;
@@ -48,6 +49,20 @@ public class BruteForceEngine {
     private final ScoringService scoringService;
     private final PenaltyService penaltyService;
 
+    /**
+     * Tìm top K tổ hợp bữa ăn dựa trên mục tiêu bữa ăn, tập món ứng viên, sở thích lịch sử,
+     * favorite items, and configuration details.
+     *
+     * @param userCtx Ngữ cảnh người dùng, chứa thông tin và sở thích riêng của người dùng.
+     * @param mealTarget Các thông số mục tiêu của bữa ăn, chẳng hạn như mục tiêu dinh dưỡng hoặc loại bữa ăn.
+     * @param candidatesPerSlot Ánh xạ từ mã slot đến danh sách các món ứng viên được xem xét cho bữa ăn.
+     * @param history Danh sách các bản ghi lịch sử, thể hiện các lựa chọn bữa ăn trước đây của người dùng.
+     * @param favoriteIds Tập hợp các định danh tương ứng với các món ăn yêu thích của người dùng.
+     * @param configs Thông tin cấu hình được dùng để chấm điểm và sinh các tổ hợp bữa ăn.
+     * @param topK Số lượng tổ hợp bữa ăn tốt nhất cần trả về.
+     * @return Danh sách tối đa topK tổ hợp bữa ăn, được sắp xếp theo điểm số và lọc để đảm bảo tính đa dạng.
+     * @throws RecommendationTooComplexException Nếu khối lượng tính toán ước tính vượt quá ngưỡng cho phép.
+     */
     public List<MealCombination> findTopK(
             UserContext userCtx,
             MealTarget mealTarget,
@@ -120,6 +135,15 @@ public class BruteForceEngine {
         return findBestServingCombo(pinnedDishes, null, mealTarget, configs, penalty);
     }
 
+    /**
+     * 
+     * @param pinnedDishes
+     * @param fixedServingByIndex
+     * @param mealTarget
+     * @param configs
+     * @param penalty
+     * @return
+     */
     public MealCombination findBestServingCombo(
             List<DishCandidate> pinnedDishes,
             Map<Integer, BigDecimal> fixedServingByIndex,
@@ -157,7 +181,15 @@ public class BruteForceEngine {
     }
 
     /**
-     * Tinh danh sach mon thay the cho tung slot cua top combination.
+     * Tính danh sách món thay thế cho từng vị trí món trong tổ hợp tốt nhất.
+     * Mỗi món thay thế được thử vào cùng slot, tính lại điểm dự kiến,
+     * sau đó sắp xếp theo điểm giảm dần và giới hạn số lượng theo cấu hình.
+     *
+     * @param topCombination tổ hợp món tốt nhất hiện tại cần sinh món thay thế
+     * @param candidatesPerSlot danh sách món ứng viên theo từng slot
+     * @param mealTarget mục tiêu dinh dưỡng của bữa ăn
+     * @param configs cấu hình hệ thống dùng để lọc, tính khẩu phần và giới hạn kết quả
+     * @return map danh sách món thay thế theo từng slot, ví dụ CHINH_0, RAU_0
      */
     public Map<String, List<SlotAlternative>> computeSlotAlternatives(
             MealCombination topCombination,

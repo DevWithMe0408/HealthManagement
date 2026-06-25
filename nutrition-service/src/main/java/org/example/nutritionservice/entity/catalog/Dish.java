@@ -15,15 +15,6 @@ import java.time.LocalDateTime;
 /**
  * Dish (mon an) — don vi co ban cua thuc don.
  *
- * <p>Luu macro TU THAN (Cach A da chot) — KHONG tinh tu dish_ingredients.
- * Ly do: ingredient list chi de hien thi, co the thieu macro (52 ingredient NULL).
- *
- * <p>Thuat toan recommendation v3.1 doc cac field:
- * <ul>
- *   <li>slotCode, foodGroupCode -> filter ung vien theo slot/nhom</li>
- *   <li>kcalPer100g, protein/fat/carbPer100g, baseServingG -> tinh kcal/macro cho 1 phan</li>
- *   <li>isActive -> filter dish bi disable</li>
- * </ul>
  */
 @Entity
 @Table(

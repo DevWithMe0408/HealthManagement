@@ -22,10 +22,10 @@ public class UserPreferenceMirror {
 
     @Id
     @Column(name = "pref_key", length = 100, nullable = false)
-    private String prefKey;
+    private String prefKey; // ten thuoc tinh
 
     @Column(name = "pref_value", nullable = false, length = 500)
-    private String prefValue;
+    private String prefValue; // gia tri thuoc tinh
 
     @UpdateTimestamp
     @Column(name = "last_synced_at", nullable = false)
