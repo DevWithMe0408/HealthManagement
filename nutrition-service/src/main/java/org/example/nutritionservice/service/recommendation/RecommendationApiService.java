@@ -190,7 +190,7 @@ public class RecommendationApiService {
                 );
                 meal.setStatus(existing.getStatus());
                 meal.setMealLogId(existing.getId());
-            } else { // Nếu chưa có
+            } else { // Nếu chưa có hoặc user bắt tạo lại
                 meal = recommendationOrchestrator.recommendForMeal(
                         userContext,
                         mealType,
@@ -210,13 +210,15 @@ public class RecommendationApiService {
                 );
                 meal.setStatus(saved.getStatus());
                 meal.setMealLogId(saved.getId());
-                meal.getCombinations().stream()
-                        .findFirst()
-                        .ifPresent(combination -> history.addAll(recommendationOrchestrator.toHistory(
-                                targetDate,
-                                combination
-                        )));
+
             }
+            meal.setHistoryContext(new ArrayList<>(history));
+            meal.getCombinations().stream()
+                    .findFirst()
+                    .ifPresent(combination -> history.addAll(recommendationOrchestrator.toHistory(
+                            targetDate,
+                            combination
+                    )));
             meals.add(meal);
         }
 
@@ -311,7 +313,9 @@ public class RecommendationApiService {
                 bestCombo,
                 loadCandidatesPerSlot(mealTarget, configs),
                 mealTarget,
-                configs
+                configs,
+                history,
+                favorites
         );
         MealCombinationResponse updatedCombination = toCombinationResponse(bestCombo, favorites);
         BigDecimal originalFinalScore = currentMeal.getTopCombination().getFinalScore();
@@ -407,7 +411,9 @@ public class RecommendationApiService {
                         topCombination,
                         meal.getCandidatesPerSlot(),
                         meal.getMealTarget(),
-                        configs
+                        configs,
+                        meal.getHistoryContext(),
+                        favorites
                 )
                 .entrySet()
                 .stream()
@@ -503,6 +509,12 @@ public class RecommendationApiService {
                 .stream()
                 .collect(Collectors.groupingBy(MealLogDish::getMealLogId));
     }
+    /**
+     * reposted -> đã được xác nhận bởi người dùng
+     * status == null -> chưa reposted
+     * status == SUGGESTED → chưa reported
+     * status != SUGGESTED → đã reported
+      */
 
     private boolean isReported(MealStatus status) {
         return status != null && status != MealStatus.SUGGESTED;
@@ -1045,9 +1057,8 @@ public class RecommendationApiService {
         validateMealConfig(request.getPlanType(), request.getPerMealConfig());
     }
 
-    private void validateMealConfig(
-            String planType,
-            Map<MealType, RecommendFullDayRequest.PerMealConfigRequest> perMealConfig) {
+    private void validateMealConfig(String planType, Map<MealType, RecommendFullDayRequest.PerMealConfigRequest> perMealConfig) {
+
         Set<MealType> expectedMeals = "3_BUA".equals(planType)
                 ? EnumSet.of(MealType.SANG, MealType.TRUA, MealType.TOI)
                 : EnumSet.allOf(MealType.class);
@@ -1106,8 +1117,9 @@ public class RecommendationApiService {
     private List<HistoryEntry> loadHistory(String userId, LocalDate targetDate, LoadedConfigs configs) {
         int days = configs.getInt("penalty.lookback_days");
         LocalDate from = targetDate.minusDays(Math.max(days - 1L, 0L));
+        LocalDate to = targetDate.minusDays(1); // Chi lay cac ngay truoc
         List<MealLog> mealLogs = mealLogRepository
-                .findByUserIdAndMealDateBetweenOrderByMealDateDescMealTypeAsc(userId, from, targetDate);
+                .findByUserIdAndMealDateBetweenOrderByMealDateDescMealTypeAsc(userId, from, to);
         Map<String, LocalDate> dates = mealLogs.stream()
                 .collect(Collectors.toMap(MealLog::getId, MealLog::getMealDate));
         if (dates.isEmpty()) {
@@ -1128,7 +1140,7 @@ public class RecommendationApiService {
             return List.of();
         }
         return currentPlan.getMeals().stream()
-                .filter(meal -> meal.getMealType() != skippedMeal)
+                .filter(meal -> meal.getMealType().ordinal() < skippedMeal.ordinal()) // loai ca bua dang sua va bua sau
                 .filter(meal -> meal.getTopCombination() != null)
                 .flatMap(meal -> meal.getTopCombination().getDishes().stream())
                 .map(dish -> HistoryEntry.builder()

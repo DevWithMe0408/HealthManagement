@@ -195,7 +195,10 @@ public class BruteForceEngine {
             MealCombination topCombination,
             Map<SlotCode, List<DishCandidate>> candidatesPerSlot,
             MealTarget mealTarget,
-            LoadedConfigs configs) {
+            LoadedConfigs configs,
+            List<HistoryEntry> history,
+            Set<String> favorites)
+    {
         Map<String, List<SlotAlternative>> result = new java.util.LinkedHashMap<>();
         int maxPerSlot = Integer.parseInt(
                 configs.getSystemConfigs().getOrDefault("display.slot_alternatives_count", "10")
@@ -218,7 +221,7 @@ public class BruteForceEngine {
             int currentDishIndex = dishIndex;
             List<SlotAlternative> alternatives = candidatesPerSlot.getOrDefault(slot, List.of()).stream()
                     .filter(candidate -> !excludeDishIds.contains(candidate.getDishId()))
-                    .map(candidate -> computeOneAlternative(topCombination, currentDishIndex, candidate, mealTarget, configs))
+                    .map(candidate -> computeOneAlternative(topCombination, currentDishIndex, candidate, mealTarget, configs,history, favorites))
                     .filter(java.util.Objects::nonNull)
                     .sorted(Comparator.comparing(SlotAlternative::getExpectedScore).reversed())
                     .toList();
@@ -260,7 +263,9 @@ public class BruteForceEngine {
             int swappedDishIndex,
             DishCandidate newCandidate,
             MealTarget mealTarget,
-            LoadedConfigs configs) {
+            LoadedConfigs configs,
+            List<HistoryEntry> history,
+            Set<String> favorites) {
         BigDecimal bestScore = BigDecimal.valueOf(-1);
         DishWithServing bestServing = null;
         for (BigDecimal serving : servingSteps(newCandidate.getSlotCode(), configs)) {
@@ -284,7 +289,16 @@ public class BruteForceEngine {
                     configs.getGoalConfig(),
                     configs
             );
-            BigDecimal score = macroScore.subtract(topCombination.getPenalty()).max(BigDecimal.ZERO);
+            List<DishCandidate> testCandidates = testCombo.stream()
+                    .map(DishWithServing::getCandidate)
+                    .toList();
+            BigDecimal penalty = penaltyService.computePenalty(
+                    testCandidates,
+                    history,
+                    favorites,
+                    configs,
+                    mealTarget.getMealDate());
+            BigDecimal score = macroScore.subtract(penalty).max(BigDecimal.ZERO);
             if (score.compareTo(bestScore) > 0) {
                 bestScore = score;
                 bestServing = newDishWithServing;

@@ -21,4 +21,5 @@ public class RecommendedMeal {
     private List<MealCombination> combinations;
     private MealStatus status;
     private String mealLogId;
+    private List<HistoryEntry> historyContext;   // history đúng-quá-khứ của riêng bữa này
 }
